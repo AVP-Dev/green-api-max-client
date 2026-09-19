@@ -3,7 +3,7 @@
 # -----------------------------------------------------------------------------
 # Stage 1: Build application assets
 # -----------------------------------------------------------------------------
-FROM node:22-alpine AS builder
+FROM node:22-bookworm-slim AS builder
 
 WORKDIR /app
 
@@ -11,13 +11,14 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 
 # Install project dependencies
-RUN npm ci || npm install
+RUN npm ci || npm install --include=dev
 
 # Copy application source code
 COPY . .
 
 # Compile TypeScript and bundle frontend with Vite into /app/dist
-RUN npm run build
+# Fallback to direct install if npm bug #4828 triggers across different host architectures
+RUN npm run build || (npm install --include=dev && npm run build)
 
 # -----------------------------------------------------------------------------
 # Stage 2: Serve static files with lightweight Nginx Alpine
