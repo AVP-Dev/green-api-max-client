@@ -6,13 +6,14 @@ A lightweight, production-ready React web client designed to interface with the 
 
 ## Tech Stack
 
-- **Frontend Framework:** React 19 / React 18+ (Functional Components, Hooks)
-- **Language:** TypeScript 5+ (Strict Typing)
-- **Bundler & Tooling:** Vite 6+
-- **Styling:** Tailwind CSS (Utility-first, responsive layouts, custom color tokens)
+- **Frontend Framework:** React 19 (Functional Components, Hooks)
+- **Language:** TypeScript 5+ (Strict Typing, `tsc --noEmit`)
+- **Bundler & Tooling:** Vite 6+ with `@vitejs/plugin-react` and `vite-plugin-pwa`
+- **Styling:** Tailwind CSS (Utility-first, responsive design, custom MAX brand gradients)
 - **Icons:** Lucide Icons (`lucide-react`)
-- **State Management & Persistence:** React Context / Local State with `localStorage` persistence
+- **State Management & Persistence:** React State & Hooks with `localStorage` synchronization
 - **Containerization:** Docker (Multi-stage build) & Nginx Alpine
+- **Continuous Integration:** GitHub Actions (`.github/workflows/ci.yml`)
 
 ---
 
@@ -24,13 +25,14 @@ A lightweight, production-ready React web client designed to interface with the 
 - **Dialog Management:** Real-time search, chat creation, pinning conversations to the top, unread counters, and chat deletion.
 - **Full Bilingual Localization:** Seamless runtime switching between Russian and English (UI controls, timestamps, status indicators, and alerts).
 - **Responsive Layout:** Adaptive desktop split-pane and mobile-first full-screen viewport with bottom navigation.
+- **PWA & Offline Awareness:** Web App Manifest, service worker caching, and real-time offline status banners.
 
 ---
 
 ## Getting Started
 
 ### Prerequisites
-- Node.js 20.x or higher
+- Node.js 20.x or 22.x
 - npm 10.x or higher (or pnpm / bun)
 
 ### Installation & Local Development
@@ -45,23 +47,24 @@ cd max-web-messenger
 # Install dependencies
 npm install
 
-# Start local development server (runs on port 3000)
+# Start local development server (binds to 0.0.0.0:3000)
 npm run dev
 ```
 
 The application will be available at `http://localhost:3000`.
 
-### Production Build
+### Production Build & Verification
 
 ```bash
-# Type-check and build production bundle
+# Type check TypeScript codebase
+npm run lint
+
+# Compile and generate production bundle in dist/
 npm run build
 
 # Preview production build locally
 npm run preview
 ```
-
-Static build artifacts will be generated in the `dist/` directory.
 
 ### Docker Deployment
 
@@ -75,6 +78,26 @@ docker compose up -d --build
 docker build -t max-web-messenger .
 docker run -d -p 3000:80 --name max-web-messenger max-web-messenger
 ```
+
+---
+
+## Continuous Integration & Deployment (CI/CD)
+
+The repository is configured with a strict GitHub Actions workflow located at `.github/workflows/ci.yml`:
+
+1. **Type Safety & Lint (`typecheck`):**
+   - Runs on `ubuntu-latest` with Node.js 22.
+   - Installs dependencies deterministically via `npm ci`.
+   - Executes `tsc --noEmit` to guarantee zero type errors.
+
+2. **Production Build (`build`):**
+   - Compiles static assets using `npm run build` (`vite build`).
+   - Verifies the integrity of `dist/index.html` and bundles.
+   - Uploads compressed build artifacts for deployment.
+
+3. **Docker Verification (`docker`):**
+   - Sets up Docker Buildx with GitHub Actions layer caching.
+   - Verifies that the multi-stage container and Nginx SPA configuration build cleanly.
 
 ---
 
@@ -96,30 +119,59 @@ docker run -d -p 3000:80 --name max-web-messenger max-web-messenger
 
 ---
 
-## Project Structure
+## Verified Project Structure
 
 ```
-├── public/                 # Static assets, icons, and PWA manifest
-├── scripts/                # Asset generation scripts
+├── .github/
+│   └── workflows/
+│       └── ci.yml             # GitHub Actions automated CI/CD pipeline
+├── public/                    # Static web assets and PWA icons
+│   ├── favicon.svg            # Favicon
+│   ├── logo.svg               # MAX brand vector logo
+│   ├── apple-touch-icon.png   # iOS touch icon
+│   ├── pwa-192x192.png        # PWA standard icon
+│   ├── pwa-512x512.png        # PWA splash icon
+│   └── pwa-maskable-512x512.png # PWA maskable adaptive icon
+├── scripts/
+│   └── generate-icons.js      # Sharp-based icon generation utility
 ├── src/
-│   ├── components/         # Modular React UI components
-│   │   ├── AuthScreen.tsx       # Instance credential & gateway connection
-│   │   ├── ChatArea.tsx         # Message viewport & action controls
-│   │   ├── DialogList.tsx       # Conversation items with avatars and badges
-│   │   ├── NewChatModal.tsx     # Contact phone validation modal
-│   │   ├── SettingsModal.tsx    # Connection, gateway, audio & data controls
-│   │   └── Sidebar.tsx          # Contact search, pin list & action header
-│   ├── hooks/              # Custom React hooks (polling engine)
-│   ├── i18n/               # Localization strings (EN / RU)
-│   ├── services/           # GREEN-API REST client service
-│   ├── types.ts            # Shared TypeScript interfaces & types
-│   ├── utils/              # Formatting, sound chime, and avatar color hash
-│   ├── App.tsx             # Root application orchestrator
-│   └── main.tsx            # React application entry point
-├── Dockerfile              # Multi-stage production container build
-├── nginx.conf              # Production Nginx SPA routing & security headers
-├── package.json            # Dependencies and npm scripts
-└── tsconfig.json           # TypeScript configuration
+│   ├── components/            # Modular React UI components
+│   │   ├── AuthScreen.tsx     # Instance credentials & gateway configuration
+│   │   ├── Avatar.tsx         # Initials extractor & deterministic pastel colors
+│   │   ├── ChatView.tsx       # Message timeline, delivery status & compose input
+│   │   ├── MaxLogo.tsx        # MAX brand vector mark
+│   │   ├── MobileBottomNav.tsx # Mobile view tab navigation (Chats, New, Settings)
+│   │   ├── NewChatModal.tsx   # Phone validation modal & contact creation
+│   │   ├── OfflineIndicator.tsx # Floating network connectivity banner
+│   │   ├── PWAInstallButton.tsx # Home screen installation button
+│   │   ├── SettingsModal.tsx  # Diagnostics, gateway routing, audio & data reset
+│   │   └── Sidebar.tsx        # Search bar, pinned chats & conversation list
+│   ├── hooks/                 # Custom React hooks
+│   │   ├── useGreenApiPolling.ts # Adaptive HTTP long-polling engine
+│   │   ├── useOnlineStatus.ts # Browser online/offline event listener
+│   │   └── usePWAInstall.ts   # PWA installation prompt controller
+│   ├── i18n/                  # Localization dictionary
+│   │   └── translations.ts    # Complete Russian and English translations
+│   ├── services/              # API Client Service
+│   │   └── greenApi.ts        # GREEN-API REST endpoints wrapper
+│   ├── utils/                 # Pure helper functions
+│   │   ├── formatters.ts      # International phone & timestamp formatting
+│   │   └── sound.ts           # Web Audio API synthetic notification chime
+│   ├── types.ts               # Shared TypeScript definitions
+│   ├── index.css              # Tailwind utilities, brand styling & safe area insets
+│   ├── App.tsx                # Central state coordinator & root component
+│   └── main.tsx               # React application entry point
+├── .dockerignore              # Exclusions for Docker image builds
+├── .env.example               # Environment variables template
+├── .gitignore                 # Version control ignores (credentials, dist, logs)
+├── Dockerfile                 # Multi-stage production container build
+├── docker-compose.yml         # Container orchestration manifest
+├── index.html                 # HTML entry point with MAX meta tags
+├── nginx.conf                 # Production Nginx SPA routing & caching
+├── package.json               # Node.js project manifest & dependencies
+├── package-lock.json          # Dependency lockfile for reproducible builds
+├── tsconfig.json              # Strict TypeScript compiler options
+└── vite.config.ts             # Vite bundler, Tailwind & PWA plugin config
 ```
 
 ---

@@ -8,10 +8,10 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Copy dependency manifests first to leverage Docker layer caching
-COPY package.json ./
+COPY package.json package-lock.json* ./
 
 # Install project dependencies
-RUN npm install
+RUN npm ci || npm install
 
 # Copy application source code
 COPY . .

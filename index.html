@@ -2,35 +2,6 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <script>
-      // Defensive compatibility shim for environments/iframes where window.fetch has only a getter
-      (function() {
-        try {
-          var originalFetch = window.fetch;
-          var desc = Object.getOwnPropertyDescriptor(window, 'fetch');
-          if (!desc) {
-            try {
-              desc = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(window), 'fetch');
-            } catch (e) {}
-          }
-          if (!desc || !desc.set || !desc.writable) {
-            var currentFetch = originalFetch;
-            Object.defineProperty(window, 'fetch', {
-              get: function() {
-                return currentFetch;
-              },
-              set: function(fn) {
-                currentFetch = fn;
-              },
-              configurable: true,
-              enumerable: true,
-            });
-          }
-        } catch (err) {
-          // If property cannot be redefined, do not block page initialization
-        }
-      })();
-    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>MAX Web Messenger</title>
     <meta name="description" content="Production-ready web messenger for the MAX ecosystem powered by GREEN-API with real-time HTTP long-polling." />

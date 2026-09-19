@@ -16,6 +16,7 @@ import { useGreenApiPolling } from './hooks/useGreenApiPolling';
 import { GreenApiService } from './services/greenApi';
 import { sanitizePhone } from './utils/formatters';
 import { playNotificationSound } from './utils/sound';
+import { safeStorage } from './utils/storage';
 import { translations } from './i18n/translations';
 
 const STORAGE_KEYS = {
@@ -52,14 +53,14 @@ export const sortDialogsWithPinnedFirst = (list: ChatDialog[]): ChatDialog[] => 
 export default function App() {
   // 1. Language state
   const [lang, setLang] = useState<Language>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.LANG);
+    const saved = safeStorage.getItem(STORAGE_KEYS.LANG);
     return saved === 'en' ? 'en' : 'ru';
   });
 
   // 1.1 App Settings state
   const [settings, setSettings] = useState<AppSettings>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+      const saved = safeStorage.getItem(STORAGE_KEYS.SETTINGS);
       if (saved) return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
     } catch {
       // ignore
@@ -70,7 +71,7 @@ export default function App() {
   // 2. Credentials state
   const [creds, setCreds] = useState<GreenApiCredentials | null>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.CREDS);
+      const saved = safeStorage.getItem(STORAGE_KEYS.CREDS);
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
@@ -80,7 +81,7 @@ export default function App() {
   // 3. Dialogs list state
   const [dialogs, setDialogs] = useState<ChatDialog[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.DIALOGS);
+      const saved = safeStorage.getItem(STORAGE_KEYS.DIALOGS);
       if (saved) return sortDialogsWithPinnedFirst(JSON.parse(saved));
     } catch {
       // ignore
@@ -104,7 +105,7 @@ export default function App() {
   // 4. Messages list state
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.MESSAGES);
+      const saved = safeStorage.getItem(STORAGE_KEYS.MESSAGES);
       if (saved) return JSON.parse(saved);
     } catch {
       // ignore
@@ -127,7 +128,7 @@ export default function App() {
 
   // 5. Active chat ID
   const [activeChatId, setActiveChatId] = useState<string | null>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.ACTIVE_CHAT);
+    const saved = safeStorage.getItem(STORAGE_KEYS.ACTIVE_CHAT);
     return saved || DEFAULT_INITIAL_PHONE;
   });
 
@@ -180,36 +181,36 @@ export default function App() {
     []
   );
 
-  // Sync to localStorage
+  // Sync to safeStorage
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.LANG, lang);
+    safeStorage.setItem(STORAGE_KEYS.LANG, lang);
   }, [lang]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+    safeStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
   }, [settings]);
 
   useEffect(() => {
     if (creds) {
-      localStorage.setItem(STORAGE_KEYS.CREDS, JSON.stringify(creds));
+      safeStorage.setItem(STORAGE_KEYS.CREDS, JSON.stringify(creds));
     } else {
-      localStorage.removeItem(STORAGE_KEYS.CREDS);
+      safeStorage.removeItem(STORAGE_KEYS.CREDS);
     }
   }, [creds]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.DIALOGS, JSON.stringify(dialogs));
+    safeStorage.setItem(STORAGE_KEYS.DIALOGS, JSON.stringify(dialogs));
   }, [dialogs]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(messages));
+    safeStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(messages));
   }, [messages]);
 
   useEffect(() => {
     if (activeChatId) {
-      localStorage.setItem(STORAGE_KEYS.ACTIVE_CHAT, activeChatId);
+      safeStorage.setItem(STORAGE_KEYS.ACTIVE_CHAT, activeChatId);
     } else {
-      localStorage.removeItem(STORAGE_KEYS.ACTIVE_CHAT);
+      safeStorage.removeItem(STORAGE_KEYS.ACTIVE_CHAT);
     }
   }, [activeChatId]);
 
@@ -482,7 +483,7 @@ export default function App() {
   const handleSignOut = () => {
     setCreds(null);
     setActiveChatId(null);
-    localStorage.removeItem(STORAGE_KEYS.CREDS);
+    safeStorage.removeItem(STORAGE_KEYS.CREDS);
     showToast(lang === 'ru' ? 'Вы вышли из сессии' : 'Signed out successfully');
   };
 
@@ -490,15 +491,15 @@ export default function App() {
     setDialogs([]);
     setMessages([]);
     setActiveChatId(null);
-    localStorage.removeItem(STORAGE_KEYS.DIALOGS);
-    localStorage.removeItem(STORAGE_KEYS.MESSAGES);
-    localStorage.removeItem(STORAGE_KEYS.ACTIVE_CHAT);
+    safeStorage.removeItem(STORAGE_KEYS.DIALOGS);
+    safeStorage.removeItem(STORAGE_KEYS.MESSAGES);
+    safeStorage.removeItem(STORAGE_KEYS.ACTIVE_CHAT);
     showToast(lang === 'ru' ? 'Все диалоги и сообщения очищены' : 'All chats and messages cleared');
   };
 
   const handleUpdateCreds = (newCreds: GreenApiCredentials) => {
     setCreds(newCreds);
-    localStorage.setItem(STORAGE_KEYS.CREDS, JSON.stringify(newCreds));
+    safeStorage.setItem(STORAGE_KEYS.CREDS, JSON.stringify(newCreds));
     showToast(lang === 'ru' ? 'Параметры связи и шлюза обновлены' : 'Connection and gateway settings updated');
   };
 
@@ -520,7 +521,7 @@ export default function App() {
   const activeDialog = dialogs.find((d) => d.chatId === activeChatId);
 
   return (
-    <div className="flex h-screen h-[100dvh] w-screen bg-slate-100 overflow-hidden font-sans">
+    <div className="flex h-screen h-[100dvh] w-full bg-slate-100 overflow-hidden font-sans">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-4 right-4 z-50 bg-slate-900 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg border border-slate-700 animate-in fade-in slide-in-from-top-2 duration-200">
