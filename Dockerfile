@@ -7,11 +7,11 @@ FROM node:22-bookworm-slim AS builder
 
 WORKDIR /app
 
-# Copy dependency manifests first to leverage Docker layer caching
-COPY package.json package-lock.json* ./
+# Copy dependency manifest
+COPY package.json ./
 
-# Install project dependencies
-RUN npm ci || npm install --include=dev
+# Install project dependencies natively for the target platform architecture
+RUN npm install
 
 # Copy application source code
 COPY . .
