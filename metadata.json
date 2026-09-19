@@ -1,0 +1,6 @@
+{
+  "name": "MAX Web Messenger",
+  "description": "Production-ready web messenger for the MAX ecosystem powered by GREEN-API with real-time HTTP long-polling.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

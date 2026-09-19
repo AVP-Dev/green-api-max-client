@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@theme {
+  --color-max-blue: #471AFF;
+  --color-max-blue-hover: #3812DE;
+  --color-max-purple: #9500FF;
+  --color-max-cyan: #00BFFF;
+  --color-max-dark: #0D001A;
+}
+
+/* MAX Brand Gradients & Visuals */
+.max-gradient-brand {
+  background: linear-gradient(135deg, #00BFFF 0%, #471AFF 48%, #9500FF 100%);
+}
+
+.max-gradient-primary {
+  background: linear-gradient(135deg, #471AFF 0%, #7C14FF 100%);
+}
+
+.max-gradient-primary:hover {
+  background: linear-gradient(135deg, #3C12E0 0%, #6E0CE8 100%);
+}
+
+.max-gradient-glow {
+  box-shadow: 0 8px 24px -4px rgba(71, 26, 255, 0.35);
+}
+
+.max-bubble-out {
+  background: linear-gradient(135deg, #471AFF 0%, #7614FF 100%);
+}
+
+/* Mobile Safe Area & Touch Optimizations */
+.pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+}
+
+.pt-safe {
+  padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
+}
+
+button, input, select, textarea, a {
+  touch-action: manipulation;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}

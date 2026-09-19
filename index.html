@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      // Defensive compatibility shim for environments/iframes where window.fetch has only a getter
+      (function() {
+        try {
+          var originalFetch = window.fetch;
+          var desc = Object.getOwnPropertyDescriptor(window, 'fetch');
+          if (!desc) {
+            try {
+              desc = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(window), 'fetch');
+            } catch (e) {}
+          }
+          if (!desc || !desc.set || !desc.writable) {
+            var currentFetch = originalFetch;
+            Object.defineProperty(window, 'fetch', {
+              get: function() {
+                return currentFetch;
+              },
+              set: function(fn) {
+                currentFetch = fn;
+              },
+              configurable: true,
+              enumerable: true,
+            });
+          }
+        } catch (err) {
+          // If property cannot be redefined, do not block page initialization
+        }
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>MAX Web Messenger</title>
+    <meta name="description" content="Production-ready web messenger for the MAX ecosystem powered by GREEN-API with real-time HTTP long-polling." />
+    <meta property="og:title" content="MAX Web Messenger" />
+    <meta property="og:description" content="Production-ready web messenger for the MAX ecosystem powered by GREEN-API with real-time HTTP long-polling." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#471AFF" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="MAX Web" />
+    <meta name="application-name" content="MAX Web" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate icon" href="/pwa-192x192.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-slate-50 text-slate-900 antialiased font-sans selection:bg-[#471AFF]/15 selection:text-[#471AFF]">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

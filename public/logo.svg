@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120" width="100%" height="100%">
+  <defs>
+    <!-- MAX Brandbook Gradient: Голубая комета (#00BFFF) -> Синий гигант (#471AFF) -> Пурпурная туманность (#9500FF) -->
+    <linearGradient id="maxBrandGradHoriz" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00BFFF" />
+      <stop offset="48%" stop-color="#471AFF" />
+      <stop offset="100%" stop-color="#9500FF" />
+    </linearGradient>
+    <filter id="badgeShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#471AFF" flood-opacity="0.25" />
+    </filter>
+  </defs>
+
+  <!-- Left: MAX Chat Bubble Icon -->
+  <g transform="translate(10, 10)">
+    <!-- Bubble -->
+    <path
+      d="M 28 8 
+         C 50 7, 68 7, 90 8 
+         C 102 9, 108 15, 109 28 
+         C 110 48, 110 64, 109 84 
+         C 108 97, 102 103, 90 104 
+         C 72 105, 56 105, 40 104 
+         C 32 103, 22 110, 12 112 
+         C 9 113, 8 111, 9 109 
+         C 12 102, 14 96, 13 90 
+         C 8 83, 7 70, 8 56 
+         C 7 38, 8 26, 13 18 
+         C 17 12, 21 9, 28 8 Z"
+      fill="url(#maxBrandGradHoriz)"
+      filter="url(#badgeShadow)"
+    />
+
+    <!-- Stylized M -->
+    <path
+      d="M 36 78
+         L 36 38
+         C 36 35, 38 33, 41 33
+         L 48 33
+         C 50 33, 52 34, 54 36
+         L 59 47
+         L 64 36
+         C 66 34, 68 33, 70 33
+         L 77 33
+         C 80 33, 82 35, 82 38
+         L 82 78
+         C 82 80, 80 82, 78 82
+         L 71 82
+         C 69 82, 67 80, 67 78
+         L 67 52
+         L 62 62
+         C 61 64, 57 64, 56 62
+         L 51 52
+         L 51 78
+         C 51 80, 49 82, 47 82
+         L 40 82
+         C 38 82, 36 80, 36 78 Z"
+      fill="#FFFFFF"
+    />
+  </g>
+
+  <!-- Right: MAX Typography -->
+  <g transform="translate(138, 72)">
+    <!-- "MAX" Lettering -->
+    <text
+      x="0"
+      y="0"
+      font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+      font-weight="900"
+      font-size="44"
+      letter-spacing="0.04em"
+      fill="#0F172A"
+    >MAX</text>
+
+    <!-- Subtitle badge -->
+    <rect x="112" y="-36" width="62" height="22" rx="6" fill="#EEF2FF" />
+    <text
+      x="143"
+      y="-21"
+      text-anchor="middle"
+      font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+      font-weight="700"
+      font-size="11"
+      fill="#471AFF"
+      letter-spacing="0.05em"
+    >WEB</text>
+
+    <text
+      x="0"
+      y="24"
+      font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+      font-weight="600"
+      font-size="13"
+      fill="#64748B"
+      letter-spacing="0.08em"
+    >max.ru</text>
+  </g>
+</svg>

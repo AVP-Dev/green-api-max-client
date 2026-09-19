@@ -1,0 +1,11 @@
+services:
+  messenger:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: max-web-messenger
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production
