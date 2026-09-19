@@ -17,8 +17,7 @@ RUN npm ci || npm install --include=dev
 COPY . .
 
 # Compile TypeScript and bundle frontend with Vite into /app/dist
-# Fallback to direct install if npm bug #4828 triggers across different host architectures
-RUN npm run build || (npm install --include=dev && npm run build)
+RUN npm run build
 
 # -----------------------------------------------------------------------------
 # Stage 2: Serve static files with lightweight Nginx Alpine
