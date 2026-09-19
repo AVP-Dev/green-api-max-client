@@ -33,12 +33,12 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Copy built artifacts from the builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Expose standard web port
-EXPOSE 80
+# Expose web ports (80 for standard Nginx, 3000/8080 for Coolify default routing)
+EXPOSE 80 3000 8080
 
 # Health check to ensure Nginx is answering requests
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
+  CMD wget --quiet --tries=1 --spider http://127.0.0.1:80/ || wget --quiet --tries=1 --spider http://127.0.0.1:3000/ || exit 1
 
 # Launch Nginx in the foreground
 CMD ["nginx", "-g", "daemon off;"]
