@@ -6,7 +6,8 @@ services:
     container_name: max-web-messenger
     restart: unless-stopped
     ports:
-      - "3000:3000"
-      - "80:80"
+      # Host 3000 -> container 80 (канонический entrypoint).
+      # nginx внутри по-прежнему слушает 80/3000/8080 для Coolify-совместимости.
+      - "3000:80"
     environment:
       - NODE_ENV=production

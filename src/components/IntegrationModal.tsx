@@ -36,7 +36,9 @@ export const IntegrationModal: React.FC<IntegrationModalProps> = ({
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Embed Customizer options
-  const [includeCreds, setIncludeCreds] = useState(true);
+  // SECURITY: includeCreds=false по умолчанию — ключи в URL утекают в историю/логи/Referer.
+  // Рекомендуется postMessage MAX_SET_CREDS или ручной ввод.
+  const [includeCreds, setIncludeCreds] = useState(false);
   const [includeActiveChat, setIncludeActiveChat] = useState(true);
   const [embedMode, setEmbedMode] = useState(true);
   const [customPhone, setCustomPhone] = useState(activeChatId || '79991234567');
@@ -67,12 +69,22 @@ export const IntegrationModal: React.FC<IntegrationModalProps> = ({
   }
 
   const embedUrl = `${origin}?${queryParams.toString()}`;
-  const iframeCode = `<iframe\n  src="${embedUrl}"\n  width="100%"\n  height="700"\n  style="border: none; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.08);"\n  allow="clipboard-write; camera; microphone"\n></iframe>`;
+  const iframeCode = `<iframe\n  src="${embedUrl}"\n  width="100%"\n  height="700"\n  style="border: none; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.08);"\n  allow="clipboard-write"\n  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"\n></iframe>`;
 
-  const postMessageSampleCode = `// 1. Слушаем события из MAX Web Messenger в родительском окне (CRM, портал)
+  const postMessageSampleCode = `// 0. Безопасность (OWASP): никогда не используйте '*' как targetOrigin в продакшене.
+//    Подставьте точный origin iframe с мессенджером в MAX_WIDGET_ORIGIN.
+//    Со стороны виджета доверенные origins родителя задаются через
+//    ?parentOrigin=https://your-crm.example.com в URL iframe и/или
+//    VITE_TRUSTED_PARENT_ORIGINS (см. src/utils/postMessageSecurity.ts).
+const MAX_WIDGET_ORIGIN = 'https://your-max-widget.example.com';
+
+// 1. Слушаем события из MAX Web Messenger в родительском окне (CRM, портал)
 window.addEventListener('message', (event) => {
+  // Принимаем события только от нашего виджета — сообщения с чужих origin отбрасываем.
+  if (event.origin !== MAX_WIDGET_ORIGIN) return;
+
   const data = event.data;
-  if (!data || !data.type) return;
+  if (!data || typeof data !== 'object' || typeof data.type !== 'string') return;
 
   switch (data.type) {
     case 'MAX_READY':
@@ -95,6 +107,7 @@ window.addEventListener('message', (event) => {
 });
 
 // 2. Управление мессенджером из вашей CRM (через iframe window)
+// Всегда указываем точный targetOrigin вместо '*'.
 const maxIframe = document.querySelector('iframe').contentWindow;
 
 // Открыть конкретный чат с клиентом:
@@ -105,7 +118,7 @@ maxIframe.postMessage({
     name: 'Иван Иванов',
     text: 'Здравствуйте! Заказ #1402 подтвержден.'
   }
-}, '*');
+}, MAX_WIDGET_ORIGIN);
 
 // Отправить сообщение напрямую через шлюз:
 maxIframe.postMessage({
@@ -114,7 +127,7 @@ maxIframe.postMessage({
     chatId: '79991234567',
     text: 'Ваш курьер прибудет через 15 минут.'
   }
-}, '*');`;
+}, MAX_WIDGET_ORIGIN);`;
 
   const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -226,6 +239,13 @@ maxIframe.postMessage({
                     />
                     <span>{lang === 'ru' ? 'Включить ключи авторизации (авто-вход)' : 'Auto-login credentials in URL'}</span>
                   </label>
+                  {includeCreds && (
+                    <div className="col-span-1 sm:col-span-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800 leading-relaxed">
+                      {lang === 'ru'
+                        ? '⚠️ Небезопасно: ключи в URL сохраняются в истории браузера, логах серверов/прокси и передаются в заголовке Referer. Рекомендуется postMessage MAX_SET_CREDS или ручной ввод — отключите эту опцию.'
+                        : '⚠️ Unsafe: credentials in the URL persist in browser history, server/proxy logs and leak via the Referer header. Prefer postMessage MAX_SET_CREDS or manual entry — turn this option off.'}
+                    </div>
+                  )}
 
                   <label className="flex items-center gap-2 cursor-pointer select-none">
                     <input
@@ -444,7 +464,7 @@ maxIframe.postMessage({
                 <a
                   href="https://green-api.com/docs/"
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-[#471AFF] font-bold hover:underline"
                 >
                   <span>green-api.com/docs</span>

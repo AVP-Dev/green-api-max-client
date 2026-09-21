@@ -3,13 +3,87 @@ import { sanitizePhone } from '../utils/formatters';
 
 export const DEFAULT_API_URL = 'https://3100.api.green-api.com';
 
+/**
+ * Allowlist шлюзов GREEN-API.
+ * Покрывает api.green-api.com, 3100.api.green-api.com, 7103.api.greenapi.com и т.п.
+ */
+export const ALLOWED_GATEWAY_PATTERN = /(^|\.)green-api\.com$|(^|\.)greenapi\.com$/;
+
+function isLocalhostHostname(hostname: string): boolean {
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]' || hostname === '::1';
+}
+
+/**
+ * Проверяет, принадлежит ли URL доверенному шлюзу (allowlist) либо localhost (для локальной разработки).
+ * Возвращает false для любых других хостов, невалидных URL и http-схемы на внешних хостах.
+ */
+export function isTrustedGatewayUrl(url: string): boolean {
+  try {
+    validateGatewayUrlOrThrow(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Нормализует и валидирует URL шлюза.
+ * - trim; добавляет https:// если схемы нет;
+ * - отклоняет http:// на внешних хостах (разрешён только для localhost/127.0.0.1);
+ * - отклоняет хосты вне allowlist *.green-api.com / *.greenapi.com (+ localhost для dev).
+ * @throws Error с bilingual (RU/EN) сообщением при невалидном URL.
+ * @returns нормализованный URL без завершающих слэшей.
+ */
+export function validateGatewayUrlOrThrow(url: string): string {
+  const trimmed = (url || '').trim();
+  if (!trimmed) {
+    throw new Error('Пустой URL шлюза / Empty gateway URL');
+  }
+  let normalized = trimmed;
+  if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(normalized)) {
+    normalized = `https://${normalized}`;
+  }
+  let parsed: URL;
+  try {
+    parsed = new URL(normalized);
+  } catch {
+    throw new Error(`Некорректный URL шлюза: ${trimmed} / Invalid gateway URL: ${trimmed}`);
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    throw new Error(
+      `Недопустимая схема URL шлюза (разрешены только https, http для localhost): ${trimmed} / Unsupported gateway URL scheme (https only, http for localhost): ${trimmed}`
+    );
+  }
+  const hostname = parsed.hostname.toLowerCase();
+  if (parsed.protocol === 'http:' && !isLocalhostHostname(hostname)) {
+    throw new Error(
+      `Небезопасная схема http:// запрещена — используйте https://: ${trimmed} / Insecure http:// scheme is forbidden — use https://: ${trimmed}`
+    );
+  }
+  // localhost разрешён только для локальной разработки (http или https)
+  if (isLocalhostHostname(hostname)) {
+    return normalized.replace(/\/+$/, '');
+  }
+  if (!ALLOWED_GATEWAY_PATTERN.test(hostname)) {
+    throw new Error(
+      `Домен шлюза вне allowlist (разрешены только *.green-api.com и *.greenapi.com): ${hostname} / Gateway domain is not allowlisted (only *.green-api.com and *.greenapi.com are allowed): ${hostname}`
+    );
+  }
+  return normalized.replace(/\/+$/, '');
+}
+
 export function getBaseUrl(creds?: Partial<GreenApiCredentials> | null): string {
   if (creds?.apiUrl && creds.apiUrl.trim()) {
-    let url = creds.apiUrl.trim();
-    if (!/^https?:\/\//i.test(url)) {
-      url = `https://${url}`;
+    try {
+      return validateGatewayUrlOrThrow(creds.apiUrl);
+    } catch (e) {
+      console.warn(
+        '[security] Untrusted gateway apiUrl rejected, falling back to default. Токены НЕ будут отправлены на недоверенный хост.',
+        creds.apiUrl,
+        e
+      );
+      return DEFAULT_API_URL;
     }
-    return url.replace(/\/+$/, '');
   }
   return DEFAULT_API_URL;
 }

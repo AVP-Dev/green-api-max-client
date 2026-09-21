@@ -73,7 +73,7 @@ export function getAvatarColor(id: string): AvatarColorStyle {
   const border = `hsl(${hue}, ${borderSaturation}%, ${borderLightness}%)`;
 
   const fallbackIndex = hash % PASTEL_PALETTES.length;
-  const fallback = PASTEL_PALETTES[fallbackIndex];
+  const fallback = PASTEL_PALETTES[fallbackIndex] ?? PASTEL_PALETTES[0]!;
 
   return {
     bg,
@@ -130,7 +130,7 @@ export function getAvatarInitials(nameOrPhone: string): string {
 export function sanitizePhone(input: string): string {
   if (!input) return '';
   // Strip any @c.us or other suffixes first, then retain digits only
-  const clean = input.split('@')[0];
+  const clean = input.split('@')[0] ?? input;
   return clean.replace(/\D/g, '');
 }
 

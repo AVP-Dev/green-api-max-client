@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo, lazy, Suspense } from 'react';
 import {
   GreenApiCredentials,
   ChatMessage,
@@ -11,22 +11,41 @@ import {
 import { AuthScreen } from './components/AuthScreen';
 import { Sidebar } from './components/Sidebar';
 import { ChatView } from './components/ChatView';
-import { NewChatModal } from './components/NewChatModal';
-import { SettingsModal } from './components/SettingsModal';
-import { AddressBookModal } from './components/AddressBookModal';
-import { QuickRepliesModal, getDefaultQuickReplies } from './components/QuickRepliesModal';
+import { getDefaultQuickReplies } from './utils/quickReplies';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { PopupNotification, PopupNotificationData } from './components/PopupNotification';
+
+// Тяжёлые модалки грузим лениво, чтобы уменьшить стартовый бандл (был 573kB).
+const NewChatModal = lazy(() =>
+  import('./components/NewChatModal').then((m) => ({ default: m.NewChatModal }))
+);
+const SettingsModal = lazy(() =>
+  import('./components/SettingsModal').then((m) => ({ default: m.SettingsModal }))
+);
+const AddressBookModal = lazy(() =>
+  import('./components/AddressBookModal').then((m) => ({ default: m.AddressBookModal }))
+);
+const QuickRepliesModal = lazy(() =>
+  import('./components/QuickRepliesModal').then((m) => ({ default: m.QuickRepliesModal }))
+);
 import { useTabNotification } from './hooks/useTabNotification';
 import { useGreenApiPolling } from './hooks/useGreenApiPolling';
-import { GreenApiService, DEFAULT_API_URL } from './services/greenApi';
+import { GreenApiService, DEFAULT_API_URL, validateGatewayUrlOrThrow } from './services/greenApi';
 import { sanitizePhone, formatDisplayPhone } from './utils/formatters';
 import { playNotificationSound } from './utils/sound';
 import { safeStorage } from './utils/storage';
+import { loadCreds, saveCreds, clearCreds, isCredsPersistent } from './utils/credentialStorage';
+import {
+  getTrustedParentOrigins,
+  isTrustedOrigin,
+  safePostToParent,
+  toSafePayloadString,
+  validateIncomingMessage,
+} from './utils/postMessageSecurity';
 import { translations } from './i18n/translations';
 
 const STORAGE_KEYS = {
-  CREDS: 'max_messenger_creds',
+  // CREDS вынесены в utils/credentialStorage (localStorage vs sessionStorage по флагу "Запомнить").
   ACTIVE_CHAT: 'max_messenger_active_chat',
   DIALOGS: 'max_messenger_dialogs',
   MESSAGES: 'max_messenger_messages',
@@ -43,6 +62,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   sendShortcut: 'enter',
   fontSize: 'medium',
   showPhoneFormatting: true,
+  browserNotificationsEnabled: true,
+  inAppPopupsEnabled: true,
 };
 
 // Initial welcome dialogue if empty
@@ -80,11 +101,18 @@ export default function App() {
   });
 
   // 2. Credentials state (default gateway: https://3100.api.green-api.com)
+  // Хранение: localStorage (persistent) или sessionStorage (до закрытия вкладки).
+  const [credsPersistent, setCredsPersistent] = useState<boolean>(() => {
+    try {
+      return isCredsPersistent();
+    } catch {
+      return true;
+    }
+  });
   const [creds, setCreds] = useState<GreenApiCredentials | null>(() => {
     try {
-      const saved = safeStorage.getItem(STORAGE_KEYS.CREDS);
-      if (saved) {
-        const parsed = JSON.parse(saved);
+      const parsed = loadCreds();
+      if (parsed) {
         if (!parsed.apiUrl || parsed.apiUrl === 'https://api.green-api.com') {
           parsed.apiUrl = DEFAULT_API_URL;
         }
@@ -274,11 +302,11 @@ export default function App() {
 
   useEffect(() => {
     if (creds) {
-      safeStorage.setItem(STORAGE_KEYS.CREDS, JSON.stringify(creds));
+      saveCreds(creds, credsPersistent);
     } else {
-      safeStorage.removeItem(STORAGE_KEYS.CREDS);
+      clearCreds();
     }
-  }, [creds]);
+  }, [creds, credsPersistent]);
 
   useEffect(() => {
     safeStorage.setItem(STORAGE_KEYS.DIALOGS, JSON.stringify(dialogs));
@@ -508,15 +536,12 @@ export default function App() {
           : `Successfully synced ${fetchedContacts.length} contacts!`
       );
 
-      // PostMessage notification if embedded
+      // PostMessage notification if embedded (targetOrigin ограничен allowlist, см. postMessageSecurity)
       if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
-        window.parent.postMessage(
-          {
-            type: 'MAX_CONTACTS_SYNCED',
-            payload: { count: fetchedContacts.length, timestamp: Date.now() },
-          },
-          '*'
-        );
+        safePostToParent({
+          type: 'MAX_CONTACTS_SYNCED',
+          payload: { count: fetchedContacts.length, timestamp: Date.now() },
+        });
       }
 
       return fetchedContacts.length;
@@ -684,6 +709,7 @@ export default function App() {
         if (existingIndex >= 0) {
           const updated = [...prev];
           const existing = updated[existingIndex];
+          if (!existing) return prev;
           updated[existingIndex] = {
             ...existing,
             displayName: existing.displayName || newMsg.senderName,
@@ -770,22 +796,19 @@ export default function App() {
         }
       }
 
-      // Dispatch postMessage for embedded CRM/app integration
+      // Dispatch postMessage for embedded CRM/app integration (безопасный targetOrigin)
       if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
-        window.parent.postMessage(
-          {
-            type: isIncoming ? 'MAX_MESSAGE_RECEIVED' : 'MAX_MESSAGE_SENT',
-            payload: {
-              chatId: cleanChatId,
-              senderPhone: newMsg.senderPhone || cleanChatId,
-              text: newMsg.text,
-              timestamp: newMsg.timestamp,
-              senderName: newMsg.senderName,
-              direction,
-            },
+        safePostToParent({
+          type: isIncoming ? 'MAX_MESSAGE_RECEIVED' : 'MAX_MESSAGE_SENT',
+          payload: {
+            chatId: cleanChatId,
+            senderPhone: newMsg.senderPhone || cleanChatId,
+            text: newMsg.text,
+            timestamp: newMsg.timestamp,
+            senderName: newMsg.senderName,
+            direction,
           },
-          '*'
-        );
+        });
       }
 
       // Only show top sync toast for outgoing sync to avoid covering the incoming PopupNotification
@@ -966,9 +989,10 @@ export default function App() {
     }
   }, [creds?.idInstance, creds?.apiTokenInstance, syncRecentMessages]);
 
-  // 7b. Continuous Real-time Background Message Auto-Reconciliation Loop (every 3.5 seconds)
-  // Ensures incoming and outgoing messages are automatically discovered and displayed
-  // in real-time, matching modern messengers (Telegram/WhatsApp), even if webhooks are delayed
+  // 7b. Background journal reconciliation (дополняет long-poll, не заменяет его).
+  // Нагрузка: 3 запроса за тик, поэтому интервал растёт от настройки пользователя
+  // settings.pollingIntervalMs (минимум 5с на активной вкладке, минимум 10с в фоне),
+  // чтобы не упереться в 429 GREEN-API. На скрытой вкладке тики пропускаются.
   useEffect(() => {
     if (!creds?.idInstance || !creds?.apiTokenInstance) return;
 
@@ -977,6 +1001,8 @@ export default function App() {
 
     const performBackgroundCheck = async () => {
       if (!isSubscribed || isChecking) return;
+      // Не дёргаем журнал в фоне — long-poll и так держит очередь.
+      if (typeof document !== 'undefined' && document.hidden) return;
       isChecking = true;
 
       try {
@@ -1046,26 +1072,36 @@ export default function App() {
     // Immediate check on mount or when switching chats
     performBackgroundCheck();
 
-    // Check window focus for instant sync on returning to browser tab
+    // Instant sync on returning to the tab (focus + visibility).
     const handleFocus = () => {
       performBackgroundCheck();
     };
-    window.addEventListener('focus', handleFocus);
-
-    // Continuous interval: 3.5s when active tab, 6s when backgrounded
-    const intervalId = setInterval(
-      () => {
+    const handleVisibility = () => {
+      if (typeof document !== 'undefined' && !document.hidden) {
         performBackgroundCheck();
-      },
-      typeof document !== 'undefined' && document.visibilityState === 'visible' ? 3500 : 6000
-    );
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    // Интервал наследуется от пользовательской настройки long-poll, но не чаще 5с
+    // (журнал тяжелее очереди). В фоне — минимум 10с.
+    const baseMs = Number.isFinite(settings.pollingIntervalMs) ? settings.pollingIntervalMs : 2000;
+    const intervalMs =
+      typeof document !== 'undefined' && document.visibilityState === 'visible'
+        ? Math.max(5000, baseMs * 2)
+        : Math.max(10000, baseMs * 3);
+    const intervalId = setInterval(() => {
+      performBackgroundCheck();
+    }, intervalMs);
 
     return () => {
       isSubscribed = false;
       clearInterval(intervalId);
       window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [creds?.idInstance, creds?.apiTokenInstance, creds?.apiUrl, activeChatId, handleIncomingMessage]);
+  }, [creds?.idInstance, creds?.apiTokenInstance, creds?.apiUrl, activeChatId, handleIncomingMessage, settings.pollingIntervalMs]);
 
   // 8. Long-polling engine initialization
   const { status: pollingStatus, lastReceiptId, errorMessage: pollingErrorMessage, retry: retryPolling } = useGreenApiPolling({
@@ -1091,8 +1127,11 @@ export default function App() {
   );
 
   // 9. Send message handler
-  const handleSendMessage = async (text: string) => {
-    if (!creds || !activeChatId || !text.trim()) return;
+  const handleSendMessage = async (rawText: string) => {
+    if (!creds || !activeChatId || !rawText.trim()) return;
+    // Defense-in-depth: режем сверхдлинные тексты до лимита мессенджера (DoS/API-abuse).
+    const text = rawText.trim().slice(0, 4096);
+    if (!text) return;
 
     const tempId = `out_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     const timestamp = Date.now();
@@ -1118,6 +1157,7 @@ export default function App() {
       if (existingIdx >= 0) {
         const updated = [...prev];
         const current = updated[existingIdx];
+        if (!current) return prev;
         updated[existingIdx] = {
           ...current,
           lastMessageText: text,
@@ -1155,20 +1195,17 @@ export default function App() {
         )
       );
 
-      // Dispatch postMessage for embedded CRM integrations
+      // Dispatch postMessage for embedded CRM integrations (безопасный targetOrigin)
       if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
-        window.parent.postMessage(
-          {
-            type: 'MAX_MESSAGE_SENT',
-            payload: {
-              chatId: cleanPhone,
-              text,
-              timestamp,
-              messageId: response.idMessage || tempId,
-            },
+        safePostToParent({
+          type: 'MAX_MESSAGE_SENT',
+          payload: {
+            chatId: cleanPhone,
+            text,
+            timestamp,
+            messageId: response.idMessage || tempId,
           },
-          '*'
-        );
+        });
       }
     } catch (err: any) {
       console.error('Send message failed:', err);
@@ -1231,25 +1268,35 @@ export default function App() {
 
   // 11. CRM / Iframe integration bridge (URL query params & window.postMessage API)
   useEffect(() => {
-    // A. Parse URL search params for deep linking from external systems
+    // A. Parse URL search params for deep linking from external systems.
+    // Секреты (?idInstance=&apiTokenInstance=) больше НЕ поддерживаются:
+    // они утекают в историю браузера, логи серверов/прокси и Referer.
+    // Используйте postMessage MAX_SET_CREDS или ручной ввод.
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const urlIdInstance = params.get('idInstance');
-      const urlApiToken = params.get('apiTokenInstance');
-      const urlApiUrl = params.get('apiUrl');
+      if (params.has('idInstance') || params.has('apiTokenInstance') || params.has('apiUrl')) {
+        console.warn(
+          '[security] Credentials via URL are no longer supported and were ignored. ' +
+            'Use postMessage MAX_SET_CREDS instead. Scrubbing secrets from the address bar now.'
+        );
+        try {
+          const cleanParams = new URLSearchParams(window.location.search);
+          cleanParams.delete('idInstance');
+          cleanParams.delete('apiTokenInstance');
+          cleanParams.delete('apiUrl');
+          const remaining = cleanParams.toString();
+          const cleanUrl = `${window.location.pathname}${remaining ? `?${remaining}` : ''}${window.location.hash}`;
+          window.history.replaceState(null, '', cleanUrl);
+        } catch {
+          // Не роняем приложение, если history API недоступен
+        }
+      }
       const urlPhone = params.get('chatId') || params.get('phone');
       const urlName = params.get('name');
-      const urlText = params.get('text');
-
-      if (urlIdInstance && urlApiToken) {
-        const newCreds: GreenApiCredentials = {
-          idInstance: urlIdInstance.trim(),
-          apiTokenInstance: urlApiToken.trim(),
-          apiUrl: urlApiUrl ? urlApiUrl.trim() : undefined,
-        };
-        setCreds(newCreds);
-        safeStorage.setItem(STORAGE_KEYS.CREDS, JSON.stringify(newCreds));
-      }
+      // ?text= — черновик для поля ввода (генераторы IntegrationPanel/Modal).
+      // Хранится как dialog.draft, в сеть ничего не отправляется до Enter.
+      const urlTextRaw = params.get('text');
+      const urlText = urlTextRaw ? urlTextRaw.trim().slice(0, 4096) : '';
 
       if (urlPhone) {
         const cleanPhone = sanitizePhone(urlPhone);
@@ -1263,22 +1310,46 @@ export default function App() {
               updatedAt: Date.now(),
             });
           }
+          if (urlText) {
+            setDialogs((prev) =>
+              prev.map((d) => (d.chatId === cleanPhone ? { ...d, draft: urlText } : d))
+            );
+          }
         }
       }
     }
 
     // B. PostMessage event listener for parent applications (Bitrix24, amoCRM, Custom Portals)
+    // OWASP: первой строкой проверяем event.origin по allowlist, затем структуру и типы payload.
+    // Fail-closed в production: без настроенного allowlist все входящие команды отбрасываются.
     const handleMessageEvent = (event: MessageEvent) => {
+      if (!isTrustedOrigin(event.origin)) {
+        console.warn('[postMessage] Blocked message from untrusted origin:', event.origin);
+        return;
+      }
+      if (getTrustedParentOrigins().length === 0) {
+        console.warn(
+          '[postMessage] Trusted parent origins not configured ' +
+            '(?parentOrigin= / VITE_TRUSTED_PARENT_ORIGINS). Dev-only fallback accepts message from:',
+          event.origin
+        );
+      }
+
+      if (!validateIncomingMessage(event)) return;
       const data = event.data;
-      if (!data || typeof data !== 'object') return;
 
       switch (data.type) {
         case 'MAX_OPEN_CHAT': {
-          const { chatId, name } = data.payload || {};
+          const payload = (data.payload || {}) as Record<string, unknown>;
+          const chatId = toSafePayloadString(payload.chatId);
+          const name = toSafePayloadString(payload.name);
+          // text в MAX_OPEN_CHAT — черновик (не авто-отправка; для отправки есть MAX_SEND_MESSAGE).
+          const draftRaw = toSafePayloadString(payload.text, 4096);
+          const draft = draftRaw ? draftRaw.slice(0, 4096) : null;
           if (chatId) {
             const clean = sanitizePhone(chatId);
             if (clean) {
-              handleStartNewChat(clean, name);
+              handleStartNewChat(clean, name || undefined);
               if (name) {
                 handleSaveContact({
                   id: clean,
@@ -1287,13 +1358,20 @@ export default function App() {
                   updatedAt: Date.now(),
                 });
               }
+              if (draft) {
+                setDialogs((prev) =>
+                  prev.map((d) => (d.chatId === clean ? { ...d, draft } : d))
+                );
+              }
             }
           }
           break;
         }
 
         case 'MAX_SEND_MESSAGE': {
-          const { chatId, text } = data.payload || {};
+          const payload = (data.payload || {}) as Record<string, unknown>;
+          const chatId = toSafePayloadString(payload.chatId);
+          const text = toSafePayloadString(payload.text);
           if (chatId && text) {
             const clean = sanitizePhone(chatId);
             if (clean) {
@@ -1310,15 +1388,27 @@ export default function App() {
         }
 
         case 'MAX_SET_CREDS': {
-          const { idInstance, apiTokenInstance, apiUrl } = data.payload || {};
+          const payload = (data.payload || {}) as Record<string, unknown>;
+          const idInstance = toSafePayloadString(payload.idInstance);
+          const apiTokenInstance = toSafePayloadString(payload.apiTokenInstance);
+          const apiUrlRaw = toSafePayloadString(payload.apiUrl);
           if (idInstance && apiTokenInstance) {
+            // Не даём родителю увести токены на левый хост: apiUrl обязан пройти allowlist.
+            if (apiUrlRaw) {
+              try {
+                validateGatewayUrlOrThrow(apiUrlRaw);
+              } catch {
+                console.warn('[postMessage] Blocked MAX_SET_CREDS with untrusted apiUrl:', apiUrlRaw);
+                break;
+              }
+            }
             const updated: GreenApiCredentials = {
-              idInstance: String(idInstance).trim(),
-              apiTokenInstance: String(apiTokenInstance).trim(),
-              apiUrl: apiUrl ? String(apiUrl).trim() : undefined,
+              idInstance,
+              apiTokenInstance,
+              apiUrl: apiUrlRaw || undefined,
             };
             setCreds(updated);
-            safeStorage.setItem(STORAGE_KEYS.CREDS, JSON.stringify(updated));
+            saveCreds(updated, credsPersistent);
             showToast(lang === 'ru' ? 'Ключи шлюза получены из родительской системы' : 'Gateway credentials received from host');
           }
           break;
@@ -1328,25 +1418,22 @@ export default function App() {
 
     window.addEventListener('message', handleMessageEvent);
 
-    // Announce readiness to parent container
+    // Announce readiness to parent container (только доверенные origins)
     if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
-      window.parent.postMessage(
-        {
-          type: 'MAX_READY',
-          payload: {
-            app: 'MAX Web Messenger for GREEN-API',
-            version: '2.0.0',
-            connected: !!creds,
-          },
+      safePostToParent({
+        type: 'MAX_READY',
+        payload: {
+          app: 'MAX Web Messenger for GREEN-API',
+          version: '2.0.0',
+          connected: !!creds,
         },
-        '*'
-      );
+      });
     }
 
     return () => {
       window.removeEventListener('message', handleMessageEvent);
     };
-  }, [creds, handleSaveContact, handleStartNewChat, handleSyncContacts, lang]);
+  }, [creds, credsPersistent, handleSaveContact, handleStartNewChat, handleSyncContacts, lang]);
 
   const handleTogglePinChat = (chatId: string) => {
     setDialogs((prev) => {
@@ -1386,7 +1473,7 @@ export default function App() {
   const handleSignOut = () => {
     setCreds(null);
     setActiveChatId(null);
-    safeStorage.removeItem(STORAGE_KEYS.CREDS);
+    clearCreds();
     showToast(lang === 'ru' ? 'Вы вышли из сессии' : 'Signed out successfully');
   };
 
@@ -1402,7 +1489,7 @@ export default function App() {
 
   const handleUpdateCreds = (newCreds: GreenApiCredentials) => {
     setCreds(newCreds);
-    safeStorage.setItem(STORAGE_KEYS.CREDS, JSON.stringify(newCreds));
+    saveCreds(newCreds, credsPersistent);
     showToast(lang === 'ru' ? 'Параметры связи и шлюза обновлены' : 'Connection and gateway settings updated');
   };
 
@@ -1410,7 +1497,10 @@ export default function App() {
   if (!creds) {
     return (
       <AuthScreen
-        onConnect={(newCreds) => setCreds(newCreds)}
+        onConnect={(newCreds, opts) => {
+          setCredsPersistent(opts?.persistent ?? true);
+          setCreds(newCreds);
+        }}
         lang={lang}
         onToggleLang={toggleLanguage}
       />
@@ -1552,70 +1642,83 @@ export default function App() {
             isSyncingHistory={isSyncingChatHistory}
             quickReplies={quickReplies}
             onOpenQuickReplies={() => setIsQuickRepliesModalOpen(true)}
+            initialDraft={activeDialog?.draft ?? null}
+            onDraftConsumed={(cid) =>
+              setDialogs((prev) =>
+                prev.map((d) => (d.chatId === cid ? { ...d, draft: undefined } : d))
+              )
+            }
           />
         </div>
       </div>
 
-      {/* New Chat Modal */}
-      <NewChatModal
-        isOpen={isNewChatModalOpen}
-        onClose={() => setIsNewChatModalOpen(false)}
-        onStartChat={handleStartNewChat}
-        contacts={contacts}
-        onOpenAddressBook={() => setIsAddressBookOpen(true)}
-        lang={lang}
-      />
+      {/* Lazy modals — подгружаются по требованию */}
+      <Suspense fallback={null}>
+        {isNewChatModalOpen && (
+          <NewChatModal
+            isOpen={isNewChatModalOpen}
+            onClose={() => setIsNewChatModalOpen(false)}
+            onStartChat={handleStartNewChat}
+            contacts={contacts}
+            onOpenAddressBook={() => setIsAddressBookOpen(true)}
+            lang={lang}
+          />
+        )}
 
-      {/* Address Book Modal (Записная книжка) */}
-      <AddressBookModal
-        isOpen={isAddressBookOpen}
-        onClose={() => setIsAddressBookOpen(false)}
-        contacts={contacts}
-        onSelectContact={(phone, name) => handleStartNewChat(phone, name)}
-        onSaveContact={handleSaveContact}
-        onDeleteContact={handleDeleteContact}
-        onSyncContacts={handleSyncContacts}
-        isSyncing={isSyncingContacts}
-        lastSyncTime={lastSyncTime}
-        lang={lang}
-      />
+        {isAddressBookOpen && (
+          <AddressBookModal
+            isOpen={isAddressBookOpen}
+            onClose={() => setIsAddressBookOpen(false)}
+            contacts={contacts}
+            onSelectContact={(phone, name) => handleStartNewChat(phone, name)}
+            onSaveContact={handleSaveContact}
+            onDeleteContact={handleDeleteContact}
+            onSyncContacts={handleSyncContacts}
+            isSyncing={isSyncingContacts}
+            lastSyncTime={lastSyncTime}
+            lang={lang}
+          />
+        )}
 
-      {/* Settings Modal (including MAX Integration, Connection, Sound & Storage) */}
-      <SettingsModal
-        isOpen={isSettingsModalOpen}
-        onClose={() => setIsSettingsModalOpen(false)}
-        settings={settings}
-        onUpdateSettings={setSettings}
-        creds={creds}
-        onUpdateCreds={handleUpdateCreds}
-        lang={lang}
-        onToggleLanguage={toggleLanguage}
-        dialogs={dialogs}
-        messages={messages}
-        onClearAllChats={handleClearAllChats}
-        onSignOut={handleSignOut}
-        activeChatId={activeChatId}
-        onSyncMessages={() => syncRecentMessages(true)}
-        isSyncingMessages={isSyncingMessages}
-        onOpenQuickReplies={() => setIsQuickRepliesModalOpen(true)}
-        quickRepliesCount={quickReplies.length}
-        onTestNotification={handleTestNotification}
-      />
+        {isSettingsModalOpen && (
+          <SettingsModal
+            isOpen={isSettingsModalOpen}
+            onClose={() => setIsSettingsModalOpen(false)}
+            settings={settings}
+            onUpdateSettings={setSettings}
+            creds={creds}
+            onUpdateCreds={handleUpdateCreds}
+            lang={lang}
+            onToggleLanguage={toggleLanguage}
+            dialogs={dialogs}
+            messages={messages}
+            onClearAllChats={handleClearAllChats}
+            onSignOut={handleSignOut}
+            activeChatId={activeChatId}
+            onSyncMessages={() => syncRecentMessages(true)}
+            isSyncingMessages={isSyncingMessages}
+            onOpenQuickReplies={() => setIsQuickRepliesModalOpen(true)}
+            quickRepliesCount={quickReplies.length}
+            onTestNotification={handleTestNotification}
+          />
+        )}
 
-      {/* Quick Replies Management Modal (Создание, редактирование и удаление шаблонов) */}
-      <QuickRepliesModal
-        isOpen={isQuickRepliesModalOpen}
-        onClose={() => setIsQuickRepliesModalOpen(false)}
-        quickReplies={quickReplies}
-        onSaveQuickReplies={(updated) => {
-          setQuickReplies(updated);
-          showToast(t.quickRepliesSaved);
-        }}
-        onSelectQuickReply={(text) => {
-          handleSendMessage(text);
-        }}
-        lang={lang}
-      />
+        {isQuickRepliesModalOpen && (
+          <QuickRepliesModal
+            isOpen={isQuickRepliesModalOpen}
+            onClose={() => setIsQuickRepliesModalOpen(false)}
+            quickReplies={quickReplies}
+            onSaveQuickReplies={(updated) => {
+              setQuickReplies(updated);
+              showToast(t.quickRepliesSaved);
+            }}
+            onSelectQuickReply={(text) => {
+              handleSendMessage(text);
+            }}
+            lang={lang}
+          />
+        )}
+      </Suspense>
 
       {/* Popup Notification for Incoming Messages */}
       <PopupNotification

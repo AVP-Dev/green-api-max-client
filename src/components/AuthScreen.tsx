@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { KeyRound, ShieldCheck, ArrowRight, Loader2, Sparkles, Globe, HelpCircle, Server, Settings2 } from 'lucide-react';
+import { KeyRound, ShieldCheck, ArrowRight, Loader2, Globe, HelpCircle } from 'lucide-react';
 import { GreenApiCredentials, Language } from '../types';
 import { translations } from '../i18n/translations';
-import { GreenApiService, DEFAULT_API_URL } from '../services/greenApi';
+import { GreenApiService, DEFAULT_API_URL, isTrustedGatewayUrl, validateGatewayUrlOrThrow } from '../services/greenApi';
 import { MaxLogo } from './MaxLogo';
 
 interface AuthScreenProps {
-  onConnect: (creds: GreenApiCredentials) => void;
+  onConnect: (creds: GreenApiCredentials, opts?: { persistent: boolean }) => void;
   lang: Language;
   onToggleLang: () => void;
 }
@@ -17,6 +17,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onConnect, lang, onToggl
   const [apiTokenInstance, setApiTokenInstance] = useState('');
   const [apiUrl, setApiUrl] = useState(DEFAULT_API_URL);
   const [showAdvancedGateway, setShowAdvancedGateway] = useState(false);
+  // SECURITY (OWASP SPA 2026): по умолчанию ключи живут только до закрытия вкладки
+  // (sessionStorage). localStorage доступен любому JS в origin при XSS, поэтому
+  // persistent-режим включается только осознанно чекбоксом ниже.
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
@@ -32,6 +36,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onConnect, lang, onToggl
       return;
     }
 
+    // Allowlist-валидация шлюза: отклоняем произвольные/небезопасные хосты до любых сетевых вызовов
+    try {
+      validateGatewayUrlOrThrow(cleanUrl);
+    } catch (err: any) {
+      setError(err?.message || (lang === 'ru' ? 'Недопустимый URL шлюза' : 'Invalid gateway URL'));
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -43,7 +55,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onConnect, lang, onToggl
         apiUrl: cleanUrl,
       });
 
-      onConnect({ idInstance: cleanId, apiTokenInstance: cleanToken, apiUrl: cleanUrl });
+      onConnect({ idInstance: cleanId, apiTokenInstance: cleanToken, apiUrl: cleanUrl }, { persistent: rememberMe });
     } catch (err: any) {
       console.warn('Instance validation warning:', err);
       // If it's a 401 / 403 or network issue, show error, but allow connect if user confirms
@@ -57,17 +69,19 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onConnect, lang, onToggl
     const cleanId = idInstance.trim();
     const cleanToken = apiTokenInstance.trim();
     const cleanUrl = apiUrl.trim() || DEFAULT_API_URL;
+    try {
+      validateGatewayUrlOrThrow(cleanUrl);
+    } catch (err: any) {
+      setError(err?.message || (lang === 'ru' ? 'Недопустимый URL шлюза' : 'Invalid gateway URL'));
+      return;
+    }
     if (cleanId && cleanToken) {
-      onConnect({ idInstance: cleanId, apiTokenInstance: cleanToken, apiUrl: cleanUrl });
+      onConnect({ idInstance: cleanId, apiTokenInstance: cleanToken, apiUrl: cleanUrl }, { persistent: rememberMe });
     }
   };
 
-  const handleFillDemo = () => {
-    setIdInstance('1101823456');
-    setApiTokenInstance('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
-    setApiUrl(DEFAULT_API_URL);
-    setError(null);
-  };
+  // Demo-подстановка удалена из исходников, чтобы тестовый токен не уезжал в прод-бандл.
+  // Для локальной разработки подставьте свои тестовые креды вручную.
 
   return (
     <div className="min-h-screen w-full bg-slate-50 relative overflow-hidden flex flex-col justify-between items-center p-4 sm:p-6 md:p-8">
@@ -134,6 +148,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onConnect, lang, onToggl
               value={idInstance}
               onChange={(e) => setIdInstance(e.target.value)}
               placeholder={t.idInstancePlaceholder}
+              autoComplete="off"
+              inputMode="numeric"
+              maxLength={32}
               className="w-full px-3.5 py-2.5 bg-slate-50/70 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#471AFF]/20 focus:border-[#471AFF] focus:bg-white transition-all font-mono"
             />
           </div>
@@ -148,9 +165,29 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onConnect, lang, onToggl
               value={apiTokenInstance}
               onChange={(e) => setApiTokenInstance(e.target.value)}
               placeholder={t.apiTokenPlaceholder}
+              autoComplete="new-password"
+              maxLength={256}
               className="w-full px-3.5 py-2.5 bg-slate-50/70 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#471AFF]/20 focus:border-[#471AFF] focus:bg-white transition-all font-mono text-xs"
             />
           </div>
+
+          <label className="flex items-start gap-2.5 p-3 bg-slate-50 border border-slate-200/80 rounded-xl cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded accent-[#471AFF] cursor-pointer"
+            />
+            <span className="text-[11px] leading-relaxed text-slate-600">
+              <span className="font-semibold text-slate-700">
+                {lang === 'ru' ? 'Запомнить на этом устройстве' : 'Remember on this device'}
+              </span>
+              <br />
+              {lang === 'ru'
+                ? 'Если выключено — ключи хранятся только до закрытия вкладки (sessionStorage, безопаснее). Если включено — в localStorage: удобно, но при XSS в браузере токен может прочитать любой скрипт.'
+                : 'If off — keys are kept only until the tab is closed (sessionStorage, safer). If on — localStorage: convenient, but any script in the page can read the token under XSS.'}
+            </span>
+          </label>
 
           {/* Optional Gateway Settings Toggle */}
           <div className="pt-0.5">
@@ -175,6 +212,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onConnect, lang, onToggl
                   placeholder="https://api.green-api.com"
                   className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#471AFF]/20 focus:border-[#471AFF]"
                 />
+                {apiUrl.trim() && !isTrustedGatewayUrl(apiUrl.trim()) && (
+                  <p className="text-[11px] text-rose-600 leading-relaxed">
+                    {lang === 'ru'
+                      ? '⚠️ Домен вне allowlist — разрешены только *.green-api.com и *.greenapi.com (https). HTTP запрещён.'
+                      : '⚠️ Domain not allowlisted — only *.green-api.com and *.greenapi.com (https) are allowed. HTTP is forbidden.'}
+                  </p>
+                )}
                 <div className="flex flex-wrap gap-1.5">
                   <button
                     type="button"
@@ -214,16 +258,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onConnect, lang, onToggl
           </button>
         </form>
 
-        {/* Quick Demo Credentials Helper */}
+        {/* Help / where to get credentials */}
         <div className="mt-5 pt-5 border-t border-slate-100 flex flex-col gap-2.5">
-          <button
-            type="button"
-            onClick={handleFillDemo}
-            className="flex items-center justify-center gap-1.5 text-xs text-[#471AFF] hover:text-[#3812DE] font-semibold py-2 px-3 rounded-xl hover:bg-indigo-50/70 transition-colors cursor-pointer"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>{t.demoFillTip}</span>
-          </button>
 
           <button
             type="button"

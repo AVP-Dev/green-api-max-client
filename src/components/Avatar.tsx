@@ -21,6 +21,22 @@ const SIZE_MAP: Record<AvatarSize, { dimension: string; text: string }> = {
   xl: { dimension: 'w-14 h-14', text: 'text-base font-extrabold' },
 };
 
+/**
+ * Allowlist для аватаров: только https и data:image.
+ * Блокирует javascript:/blob:/vbscript: из непроверенных API-ответов (XSS через <img src>).
+ */
+function isSafeAvatarUrl(url: string): boolean {
+  const trimmed = url.trim();
+  if (!trimmed) return false;
+  if (/^data:image\/(png|jpeg|jpg|gif|webp|svg\+xml);base64,/i.test(trimmed)) return true;
+  try {
+    const parsed = new URL(trimmed, typeof window !== 'undefined' ? window.location.origin : 'https://localhost');
+    return parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 export const Avatar: React.FC<AvatarProps> = ({
   id,
   name,
@@ -36,22 +52,27 @@ export const Avatar: React.FC<AvatarProps> = ({
   const sizeConfig = SIZE_MAP[size] || SIZE_MAP.md;
 
   if (avatarUrl && !imgFailed) {
-    return (
-      <div
-        id={elementId}
-        className={`rounded-full overflow-hidden shrink-0 select-none ${sizeConfig.dimension} ${
-          showBorder ? 'ring-1 ring-slate-200' : ''
-        } ${className}`}
-      >
-        <img
-          src={avatarUrl}
-          alt={name || id}
-          referrerPolicy="no-referrer"
-          onError={() => setImgFailed(true)}
-          className="w-full h-full object-cover rounded-full"
-        />
-      </div>
-    );
+    // Недоверенный URL (напр. javascript:) — показываем инициалы вместо <img>.
+    if (!isSafeAvatarUrl(avatarUrl)) {
+      // fall through к инициалам ниже
+    } else {
+      return (
+        <div
+          id={elementId}
+          className={`rounded-full overflow-hidden shrink-0 select-none ${sizeConfig.dimension} ${
+            showBorder ? 'ring-1 ring-slate-200' : ''
+          } ${className}`}
+        >
+          <img
+            src={avatarUrl}
+            alt={name || id}
+            referrerPolicy="no-referrer"
+            onError={() => setImgFailed(true)}
+            className="w-full h-full object-cover rounded-full"
+          />
+        </div>
+      );
+    }
   }
 
   return (

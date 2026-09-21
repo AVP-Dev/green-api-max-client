@@ -148,6 +148,10 @@ export interface AppSettings {
   sendShortcut: 'enter' | 'ctrl_enter';
   fontSize: 'small' | 'medium' | 'large';
   showPhoneFormatting: boolean;
+  /** Native OS/browser Notification (fires only when the tab is in background). */
+  browserNotificationsEnabled: boolean;
+  /** Beautiful in-app popup card (fires only when the user looks at this tab). */
+  inAppPopupsEnabled: boolean;
 }
 
 export interface QuickReply {

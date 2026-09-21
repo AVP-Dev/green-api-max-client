@@ -53,6 +53,9 @@ interface ChatViewProps {
   isSyncingHistory?: boolean;
   quickReplies?: QuickReply[];
   onOpenQuickReplies?: () => void;
+  /** Черновик из интеграции (?text= / MAX_OPEN_CHAT text). Подставляется один раз. */
+  initialDraft?: string | null;
+  onDraftConsumed?: (chatId: string) => void;
 }
 
 export const ChatView: React.FC<ChatViewProps> = ({
@@ -77,6 +80,8 @@ export const ChatView: React.FC<ChatViewProps> = ({
   isSyncingHistory = false,
   quickReplies = [],
   onOpenQuickReplies,
+  initialDraft,
+  onDraftConsumed,
 }) => {
   const t = translations[lang];
   const [inputText, setInputText] = useState('');
@@ -105,6 +110,21 @@ export const ChatView: React.FC<ChatViewProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const lastTypingSentRef = useRef<number>(0);
+  const consumedDraftRef = useRef<string | null>(null);
+
+  // Черновик из CRM-интеграции: подставить один раз при смене чата/появлении draft.
+  // Не затирает уже набранный пользователем текст.
+  useEffect(() => {
+    if (!chatId || !initialDraft) return;
+    const key = `${chatId}::${initialDraft}`;
+    if (consumedDraftRef.current === key) return;
+    setInputText((prev) => {
+      if (prev.trim()) return prev;
+      return initialDraft.slice(0, 4096);
+    });
+    consumedDraftRef.current = key;
+    onDraftConsumed?.(chatId);
+  }, [chatId, initialDraft, onDraftConsumed]);
 
   // Auto-scroll to bottom upon messages change
   useEffect(() => {
@@ -139,9 +159,11 @@ export const ChatView: React.FC<ChatViewProps> = ({
     );
   }
 
+  const MAX_MESSAGE_LENGTH = 4096;
+
   const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const text = inputText.trim();
+    const text = inputText.trim().slice(0, MAX_MESSAGE_LENGTH);
     if (!text || isSending) return;
 
     setInputText('');
@@ -708,8 +730,10 @@ export const ChatView: React.FC<ChatViewProps> = ({
             type="text"
             disabled={isSending}
             value={inputText}
+            maxLength={4096}
+            autoComplete="off"
             onChange={(e) => {
-              const val = e.target.value;
+              const val = e.target.value.slice(0, 4096);
               setInputText(val);
               if (onSendTyping && chatId && val.trim() && Date.now() - lastTypingSentRef.current > 3500) {
                 lastTypingSentRef.current = Date.now();

@@ -7,11 +7,11 @@ FROM node:22-bookworm-slim AS builder
 
 WORKDIR /app
 
-# Copy dependency manifest
-COPY package.json ./
+# Copy dependency manifests (package-lock.json required for deterministic npm ci)
+COPY package.json package-lock.json ./
 
-# Install project dependencies natively for the target platform architecture
-RUN npm install
+# Install project dependencies deterministically for the target platform architecture
+RUN npm ci --no-audit --no-fund
 
 # Copy application source code
 COPY . .
@@ -33,8 +33,14 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Copy built artifacts from the builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Expose web ports (80 for standard Nginx, 3000/8080 for Coolify default routing)
-EXPOSE 80 3000 8080
+# NOTE on USER: intentionally running the nginx master process as root so it can
+# bind privileged ports 80/3000/8080 (Coolify default routing). Worker processes
+# already drop privileges via `user nginx;` in the base image's /etc/nginx/nginx.conf.
+# Switching to `USER nginx` would require moving all listeners to unprivileged
+# ports (>=1024) and updating Coolify/docker-compose port mappings accordingly.
+# Expose only port 80 as the canonical entrypoint (3000/8080 listeners are kept
+# in nginx.conf solely for Coolify compatibility, not advertised here).
+EXPOSE 80
 
 # Health check to ensure Nginx is answering requests
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
