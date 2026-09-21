@@ -42,7 +42,6 @@ interface SidebarProps {
   receiptCount?: number;
   onOpenSettings: () => void;
   onOpenAddressBook?: () => void;
-  contactsCount?: number;
   contactsMap?: Map<string, Contact>;
   showPhoneFormatting?: boolean;
   onTogglePinChat?: (chatId: string) => void;
@@ -66,7 +65,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleLang,
   onOpenSettings,
   onOpenAddressBook,
-  contactsCount = 0,
   contactsMap,
   showPhoneFormatting = true,
   onTogglePinChat,
@@ -198,15 +196,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               id="sidebar-address-book-button"
               type="button"
               onClick={onOpenAddressBook}
-              className="relative p-2 text-slate-500 hover:text-[#471AFF] hover:bg-indigo-50 rounded-xl transition-colors cursor-pointer"
+              className="p-2 text-slate-500 hover:text-[#471AFF] hover:bg-indigo-50 rounded-xl transition-colors cursor-pointer"
               title={lang === 'ru' ? 'Записная книжка MAX' : 'MAX Address Book'}
             >
               <BookUser className="w-4 h-4" />
-              {contactsCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] px-1 rounded-full bg-[#471AFF] text-white text-[9px] font-bold flex items-center justify-center leading-none">
-                  {contactsCount > 99 ? '99+' : contactsCount}
-                </span>
-              )}
             </button>
           )}
 

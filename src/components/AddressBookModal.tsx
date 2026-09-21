@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   X,
   BookUser,
@@ -73,6 +73,50 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
       return Boolean(nameMatch || phoneMatch || companyMatch || noteMatch);
     });
   }, [contacts, searchQuery]);
+
+  // Масштабирование на сотни/тысячи контактов: алфавитные секции + порционный рендер.
+  // Без виртуализации-зависимостей: рисуем первые PAGE_SIZE, дальше — «Показать ещё».
+  const CONTACT_PAGE_SIZE = 100;
+  const [visibleLimit, setVisibleLimit] = useState(CONTACT_PAGE_SIZE);
+
+  // Новый поиск / изменённый список — снова с первой порции.
+  useEffect(() => {
+    setVisibleLimit(CONTACT_PAGE_SIZE);
+  }, [searchQuery, contacts.length]);
+
+  const getDisplayName = (c: Contact): string =>
+    c.contactName || c.name || formatDisplayPhone(c.id);
+
+  const groupedContacts = useMemo(() => {
+    const sorted = [...filteredContacts].sort((a, b) =>
+      getDisplayName(a).localeCompare(getDisplayName(b), lang === 'ru' ? 'ru' : 'en', {
+        sensitivity: 'base',
+      })
+    );
+    const groups = new Map<string, Contact[]>();
+    sorted.forEach((c) => {
+      const first = getDisplayName(c).trim()[0] || '#';
+      const key = /[A-Za-zА-Яа-яЁё]/.test(first) ? first.toLocaleUpperCase() : '#';
+      const list = groups.get(key);
+      if (list) list.push(c);
+      else groups.set(key, [c]);
+    });
+    return [...groups.entries()];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredContacts, lang]);
+
+  // Порция для рендера: целые секции влезшие в лимит + счётчик показанных.
+  let shownCount = 0;
+  const visibleGroups: Array<[string, Contact[]]> = [];
+  for (const [key, list] of groupedContacts) {
+    if (shownCount >= visibleLimit) break;
+    const take = list.slice(0, visibleLimit - shownCount);
+    if (take.length > 0) {
+      visibleGroups.push([key, take]);
+      shownCount += take.length;
+    }
+  }
+  const remainingCount = filteredContacts.length - shownCount;
 
   if (!isOpen) return null;
 
@@ -395,99 +439,131 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
               )}
             </div>
           ) : (
-            filteredContacts.map((contact) => {
-              const displayName = contact.contactName || contact.name || formatDisplayPhone(contact.id);
-              const formattedPhone = formatDisplayPhone(contact.id);
+            <>
+              {/* Счётчик видимой порции */}
+              <div className="px-1 pb-1 text-[11px] text-slate-500 dark:text-slate-400">
+                {lang === 'ru'
+                  ? `Показано ${shownCount} из ${filteredContacts.length}`
+                  : `Showing ${shownCount} of ${filteredContacts.length}`}
+              </div>
 
-              return (
-                <div
-                  key={contact.id}
-                  className="pt-2.5 first:pt-0 flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors group"
-                >
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <Avatar
-                      id={contact.id}
-                      name={displayName}
-                      avatarUrl={contact.avatarUrl}
-                      size="md"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs sm:text-sm truncate">
-                          {displayName}
-                        </span>
-                        {/* Source Badge */}
-                        <span
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-medium tracking-tight ${
-                            contact.source === 'api'
-                              ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800'
-                              : contact.source === 'manual'
-                              ? 'bg-indigo-50 dark:bg-indigo-950/60 text-[#471AFF] dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800'
-                              : 'bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-100 dark:border-amber-800'
-                          }`}
-                        >
-                          {contact.source === 'api'
-                            ? 'MAX API'
-                            : contact.source === 'manual'
-                            ? (lang === 'ru' ? 'Вручную' : 'Manual')
-                            : (lang === 'ru' ? 'Из чата' : 'Chat')}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2.5 text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                        <span className="font-mono text-slate-600 dark:text-slate-300">{formattedPhone}</span>
-                        {contact.company && (
-                          <span className="hidden sm:inline-flex items-center gap-1 text-slate-500 dark:text-slate-400 truncate">
-                            <Building className="w-3 h-3 text-slate-400 dark:text-slate-500 shrink-0" />
-                            <span className="truncate">{contact.company}</span>
-                          </span>
-                        )}
-                        {contact.note && (
-                          <span className="hidden md:inline-flex items-center gap-1 text-slate-400 dark:text-slate-500 italic truncate max-w-[140px]">
-                            <FileText className="w-3 h-3 shrink-0" />
-                            <span className="truncate">{contact.note}</span>
-                          </span>
-                        )}
-                      </div>
-                    </div>
+              {visibleGroups.map(([groupKey, list]) => (
+                <div key={groupKey}>
+                  {/* Липкий заголовок секции */}
+                  <div className="sticky top-0 z-10 px-2 py-1 bg-white dark:bg-slate-900 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    {groupKey}
                   </div>
+                  {list.map((contact) => {
+                    const displayName = getDisplayName(contact);
+                    const formattedPhone = formatDisplayPhone(contact.id);
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onSelectContact(contact.id, displayName);
-                        onClose();
-                      }}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#471AFF] hover:bg-[#3b15d6] text-white text-xs font-semibold shadow-2xs transition-all active:scale-95 cursor-pointer"
-                      title={lang === 'ru' ? 'Открыть чат' : 'Open chat'}
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">{lang === 'ru' ? 'Написать' : 'Message'}</span>
-                    </button>
+                    return (
+                      <div
+                        key={contact.id}
+                        className="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors group"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <Avatar
+                            id={contact.id}
+                            name={displayName}
+                            avatarUrl={contact.avatarUrl}
+                            size="md"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs sm:text-sm truncate">
+                                {displayName}
+                              </span>
+                              {/* Source Badge */}
+                              <span
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-medium tracking-tight ${
+                                  contact.source === 'api'
+                                    ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800'
+                                    : contact.source === 'manual'
+                                    ? 'bg-indigo-50 dark:bg-indigo-950/60 text-[#471AFF] dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800'
+                                    : 'bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-100 dark:border-amber-800'
+                                }`}
+                              >
+                                {contact.source === 'api'
+                                  ? 'MAX API'
+                                  : contact.source === 'manual'
+                                  ? (lang === 'ru' ? 'Вручную' : 'Manual')
+                                  : (lang === 'ru' ? 'Из чата' : 'Chat')}
+                              </span>
+                            </div>
 
-                    <button
-                      type="button"
-                      onClick={() => handleStartEdit(contact)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/70 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                      title={lang === 'ru' ? 'Редактировать' : 'Edit'}
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
+                            <div className="flex items-center gap-2.5 text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                              <span className="font-mono text-slate-600 dark:text-slate-300">{formattedPhone}</span>
+                              {contact.company && (
+                                <span className="hidden sm:inline-flex items-center gap-1 text-slate-500 dark:text-slate-400 truncate">
+                                  <Building className="w-3 h-3 text-slate-400 dark:text-slate-500 shrink-0" />
+                                  <span className="truncate">{contact.company}</span>
+                                </span>
+                              )}
+                              {contact.note && (
+                                <span className="hidden md:inline-flex items-center gap-1 text-slate-400 dark:text-slate-500 italic truncate max-w-[140px]">
+                                  <FileText className="w-3 h-3 shrink-0" />
+                                  <span className="truncate">{contact.note}</span>
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
 
-                    <button
-                      type="button"
-                      onClick={() => onDeleteContact(contact.id)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
-                      title={lang === 'ru' ? 'Удалить из книжки' : 'Delete'}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                        {/* Actions */}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onSelectContact(contact.id, displayName);
+                              onClose();
+                            }}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#471AFF] hover:bg-[#3b15d6] text-white text-xs font-semibold shadow-2xs transition-all active:scale-95 cursor-pointer"
+                            title={lang === 'ru' ? 'Открыть чат' : 'Open chat'}
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">{lang === 'ru' ? 'Написать' : 'Message'}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleStartEdit(contact)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/70 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                            title={lang === 'ru' ? 'Редактировать' : 'Edit'}
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => onDeleteContact(contact.id)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
+                            title={lang === 'ru' ? 'Удалить из книжки' : 'Delete'}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })
+              ))}
+
+              {/* Догрузка следующей порции */}
+              {remainingCount > 0 && (
+                <div className="pt-2 pb-1 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setVisibleLimit((v) => v + CONTACT_PAGE_SIZE)}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900 text-[#471AFF] dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800 transition-colors cursor-pointer"
+                  >
+                    {lang === 'ru'
+                      ? `Показать ещё ${Math.min(remainingCount, CONTACT_PAGE_SIZE)} из ${remainingCount}`
+                      : `Show ${Math.min(remainingCount, CONTACT_PAGE_SIZE)} more of ${remainingCount}`}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
 

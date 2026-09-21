@@ -1826,7 +1826,6 @@ export default function App() {
             onTogglePinChat={handleTogglePinChat}
             typingChats={typingChats}
             contactsMap={contactsMap}
-            contactsCount={contacts.length}
             onOpenAddressBook={() => setIsAddressBookOpen(true)}
             onSyncMessages={() => syncRecentMessages(true)}
             isSyncingMessages={isSyncingMessages}
