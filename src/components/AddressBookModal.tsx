@@ -59,6 +59,21 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
   const [formError, setFormError] = useState<string | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
+  const filteredContacts = useMemo(() => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return contacts;
+
+    return contacts.filter((c) => {
+      const nameMatch =
+        (c.contactName && c.contactName.toLowerCase().includes(query)) ||
+        (c.name && c.name.toLowerCase().includes(query));
+      const phoneMatch = c.id.includes(query);
+      const companyMatch = c.company && c.company.toLowerCase().includes(query);
+      const noteMatch = c.note && c.note.toLowerCase().includes(query);
+      return Boolean(nameMatch || phoneMatch || companyMatch || noteMatch);
+    });
+  }, [contacts, searchQuery]);
+
   if (!isOpen) return null;
 
   const showFeedback = (msg: string) => {
@@ -147,21 +162,6 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
       );
     }
   };
-
-  const filteredContacts = useMemo(() => {
-    const query = searchQuery.toLowerCase().trim();
-    if (!query) return contacts;
-
-    return contacts.filter((c) => {
-      const nameMatch =
-        (c.contactName && c.contactName.toLowerCase().includes(query)) ||
-        (c.name && c.name.toLowerCase().includes(query));
-      const phoneMatch = c.id.includes(query);
-      const companyMatch = c.company && c.company.toLowerCase().includes(query);
-      const noteMatch = c.note && c.note.toLowerCase().includes(query);
-      return Boolean(nameMatch || phoneMatch || companyMatch || noteMatch);
-    });
-  }, [contacts, searchQuery]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">

@@ -1,7 +1,7 @@
 import { GreenApiCredentials, GreenApiNotification } from '../types';
 import { sanitizePhone } from '../utils/formatters';
 
-export const DEFAULT_API_URL = 'https://api.green-api.com';
+export const DEFAULT_API_URL = 'https://3100.api.green-api.com';
 
 export function getBaseUrl(creds?: Partial<GreenApiCredentials> | null): string {
   if (creds?.apiUrl && creds.apiUrl.trim()) {

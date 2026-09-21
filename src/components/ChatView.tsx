@@ -16,8 +16,7 @@ import {
   Plus,
   X,
   BookUser,
-  UserPlus,
-  Code2
+  UserPlus
 } from 'lucide-react';
 import { AppSettings, ChatMessage, Contact, Language } from '../types';
 import { translations } from '../i18n/translations';
@@ -40,7 +39,6 @@ interface ChatViewProps {
   settings?: AppSettings;
   onOpenSettings?: () => void;
   onOpenAddressBook?: () => void;
-  onOpenIntegration?: () => void;
   onQuickSaveContact?: (chatId: string, name: string) => void;
   contact?: Contact;
   isPinned?: boolean;
@@ -61,7 +59,6 @@ export const ChatView: React.FC<ChatViewProps> = ({
   settings,
   onOpenSettings,
   onOpenAddressBook,
-  onOpenIntegration,
   onQuickSaveContact,
   contact,
   isPinned = false,
@@ -282,17 +279,6 @@ export const ChatView: React.FC<ChatViewProps> = ({
             </button>
           )}
 
-          {onOpenIntegration && (
-            <button
-              type="button"
-              onClick={onOpenIntegration}
-              title={lang === 'ru' ? 'Интеграция в сервисы' : 'Integrate into services'}
-              className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center text-slate-400 hover:text-[#471AFF] hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer hidden sm:flex"
-            >
-              <Code2 className="w-4 h-4" />
-            </button>
-          )}
-
           <div className="relative">
             <button
               id="chat-menu-trigger-button"
@@ -322,19 +308,6 @@ export const ChatView: React.FC<ChatViewProps> = ({
                     >
                       <BookUser className="w-3.5 h-3.5 text-[#471AFF]" />
                       <span>{t.addressBookTitle}</span>
-                    </button>
-                  )}
-                  {onOpenIntegration && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onOpenIntegration();
-                        setShowOptions(false);
-                      }}
-                      className="w-full px-3 py-2 text-left text-slate-700 hover:bg-indigo-50 hover:text-[#471AFF] flex items-center gap-2 transition-colors cursor-pointer"
-                    >
-                      <Code2 className="w-3.5 h-3.5 text-[#471AFF]" />
-                      <span>{t.integrationTitle}</span>
                     </button>
                   )}
                   {onSimulateTyping && chatId && (

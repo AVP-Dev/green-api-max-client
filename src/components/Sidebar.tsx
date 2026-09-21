@@ -41,7 +41,6 @@ interface SidebarProps {
   receiptCount?: number;
   onOpenSettings: () => void;
   onOpenAddressBook?: () => void;
-  onOpenIntegration?: () => void;
   contactsCount?: number;
   contactsMap?: Map<string, Contact>;
   showPhoneFormatting?: boolean;
@@ -64,7 +63,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleLang,
   onOpenSettings,
   onOpenAddressBook,
-  onOpenIntegration,
   contactsCount = 0,
   contactsMap,
   showPhoneFormatting = true,
@@ -155,7 +153,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <aside className="w-full md:w-[340px] lg:w-[380px] h-full flex flex-col bg-white border-r border-slate-200 shrink-0 select-none">
+    <aside className="w-full h-full flex flex-col bg-white shrink-0 select-none">
       {/* Profile Bar Header */}
       <div className="p-3.5 border-b border-slate-200 bg-slate-50/80 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -189,18 +187,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {contactsCount > 99 ? '99+' : contactsCount}
                 </span>
               )}
-            </button>
-          )}
-
-          {onOpenIntegration && (
-            <button
-              id="sidebar-integration-button"
-              type="button"
-              onClick={onOpenIntegration}
-              className="p-2 text-slate-500 hover:text-[#471AFF] hover:bg-indigo-50 rounded-xl transition-colors cursor-pointer"
-              title={lang === 'ru' ? 'Интеграция в сервисы (iframe, API)' : 'Service Integration (iframe, API)'}
-            >
-              <Code2 className="w-4 h-4" />
             </button>
           )}
 

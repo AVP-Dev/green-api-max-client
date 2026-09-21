@@ -20,12 +20,14 @@ import {
   AlertTriangle,
   Activity,
   Wrench,
-  Layers
+  Layers,
+  Code2,
 } from 'lucide-react';
 import { AppSettings, GreenApiCredentials, Language, ChatDialog, ChatMessage } from '../types';
 import { translations } from '../i18n/translations';
 import { GreenApiService, DEFAULT_API_URL } from '../services/greenApi';
 import { playNotificationSound } from '../utils/sound';
+import { IntegrationPanel } from './IntegrationPanel';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -40,9 +42,10 @@ interface SettingsModalProps {
   messages: ChatMessage[];
   onClearAllChats: () => void;
   onSignOut: () => void;
+  activeChatId?: string | null;
 }
 
-type TabType = 'chat' | 'notifications' | 'connection' | 'data';
+type TabType = 'chat' | 'notifications' | 'connection' | 'integration' | 'data';
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
@@ -57,6 +60,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   messages,
   onClearAllChats,
   onSignOut,
+  activeChatId,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('chat');
   const [checkingStatus, setCheckingStatus] = useState(false);
@@ -408,7 +412,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <span className="truncate sm:whitespace-normal leading-tight">{t.settingsSectionConnection}</span>
             </button>
 
-            {/* 4. Data & Account */}
+            {/* 4. Integration MAX */}
+            <button
+              id="tab-integration-button"
+              type="button"
+              onClick={() => setActiveTab('integration')}
+              className={`flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-left transition-all shrink-0 sm:shrink cursor-pointer ${
+                activeTab === 'integration'
+                  ? 'max-gradient-primary text-white shadow-xs'
+                  : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <Code2 className="w-4 h-4 shrink-0" />
+              <span className="truncate sm:whitespace-normal leading-tight">
+                {lang === 'ru' ? 'Интеграция MAX' : 'MAX Integration'}
+              </span>
+            </button>
+
+            {/* 5. Data & Account */}
             <button
               id="tab-data-button"
               type="button"
@@ -1064,6 +1085,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* 5. Integration MAX */}
+            {activeTab === 'integration' && (
+              <IntegrationPanel creds={creds} activeChatId={activeChatId} lang={lang} />
             )}
           </div>
         </div>

@@ -13,10 +13,9 @@ import { ChatView } from './components/ChatView';
 import { NewChatModal } from './components/NewChatModal';
 import { SettingsModal } from './components/SettingsModal';
 import { AddressBookModal } from './components/AddressBookModal';
-import { IntegrationModal } from './components/IntegrationModal';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { useGreenApiPolling } from './hooks/useGreenApiPolling';
-import { GreenApiService } from './services/greenApi';
+import { GreenApiService, DEFAULT_API_URL } from './services/greenApi';
 import { sanitizePhone } from './utils/formatters';
 import { playNotificationSound } from './utils/sound';
 import { safeStorage } from './utils/storage';
@@ -73,11 +72,18 @@ export default function App() {
     return DEFAULT_SETTINGS;
   });
 
-  // 2. Credentials state
+  // 2. Credentials state (default gateway: https://3100.api.green-api.com)
   const [creds, setCreds] = useState<GreenApiCredentials | null>(() => {
     try {
       const saved = safeStorage.getItem(STORAGE_KEYS.CREDS);
-      return saved ? JSON.parse(saved) : null;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (!parsed.apiUrl || parsed.apiUrl === 'https://api.green-api.com') {
+          parsed.apiUrl = DEFAULT_API_URL;
+        }
+        return parsed;
+      }
+      return null;
     } catch {
       return null;
     }
@@ -167,7 +173,6 @@ export default function App() {
 
   const [isSyncingContacts, setIsSyncingContacts] = useState(false);
   const [isAddressBookOpen, setIsAddressBookOpen] = useState(false);
-  const [isIntegrationModalOpen, setIsIntegrationModalOpen] = useState(false);
 
   // Fast map lookup
   const contactsMap = useMemo(() => {
@@ -930,7 +935,7 @@ export default function App() {
   const activeDialog = dialogs.find((d) => d.chatId === activeChatId);
 
   return (
-    <div className="flex h-screen h-[100dvh] w-full bg-slate-100 overflow-hidden font-sans">
+    <div className="fixed inset-0 w-full h-full flex overflow-hidden bg-white select-none font-sans">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-4 right-4 z-50 bg-slate-900 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg border border-slate-700 animate-in fade-in slide-in-from-top-2 duration-200">
@@ -942,12 +947,12 @@ export default function App() {
       <OfflineIndicator lang={lang} />
 
       {/* Main Container */}
-      <div className="w-full h-full max-w-[1600px] mx-auto flex overflow-hidden bg-white shadow-xs">
+      <div className="w-full h-full flex overflow-hidden bg-white">
         {/* Left Sidebar (hidden on mobile if chat is active) */}
         <div
           className={`${
             activeChatId ? 'hidden md:flex' : 'flex'
-          } w-full md:w-auto h-full`}
+          } w-full md:w-[360px] lg:w-[400px] shrink-0 h-full flex-col border-r border-slate-200 bg-white z-10`}
         >
           <Sidebar
             creds={creds}
@@ -969,7 +974,6 @@ export default function App() {
             contactsMap={contactsMap}
             contactsCount={contacts.length}
             onOpenAddressBook={() => setIsAddressBookOpen(true)}
-            onOpenIntegration={() => setIsIntegrationModalOpen(true)}
           />
         </div>
 
@@ -977,7 +981,7 @@ export default function App() {
         <div
           className={`${
             activeChatId ? 'flex' : 'hidden md:flex'
-          } flex-1 h-full overflow-hidden`}
+          } flex-1 min-w-0 h-full flex-col overflow-hidden bg-[#F7F8FA]`}
         >
           <ChatView
             chatId={activeChatId}
@@ -990,7 +994,6 @@ export default function App() {
             settings={settings}
             onOpenSettings={() => setIsSettingsModalOpen(true)}
             onOpenAddressBook={() => setIsAddressBookOpen(true)}
-            onOpenIntegration={() => setIsIntegrationModalOpen(true)}
             onQuickSaveContact={(id, name) =>
               handleSaveContact({
                 id,
@@ -1033,15 +1036,7 @@ export default function App() {
         lang={lang}
       />
 
-      {/* Integration & Embedding Modal (Iframe/API) */}
-      <IntegrationModal
-        isOpen={isIntegrationModalOpen}
-        onClose={() => setIsIntegrationModalOpen(false)}
-        creds={creds}
-        lang={lang}
-      />
-
-      {/* Settings Modal */}
+      {/* Settings Modal (including MAX Integration, Connection, Sound & Storage) */}
       <SettingsModal
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
@@ -1055,6 +1050,7 @@ export default function App() {
         messages={messages}
         onClearAllChats={handleClearAllChats}
         onSignOut={handleSignOut}
+        activeChatId={activeChatId}
       />
     </div>
   );
