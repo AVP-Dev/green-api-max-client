@@ -103,7 +103,7 @@ export const PopupNotification: React.FC<PopupNotificationProps> = ({
                     e.stopPropagation();
                     onDismiss();
                   }}
-                  className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer ml-1"
+                  className="p-1 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer ml-1"
                   title={isRu ? 'Закрыть' : 'Dismiss'}
                 >
                   <X className="w-4 h-4" />
@@ -118,7 +118,7 @@ export const PopupNotification: React.FC<PopupNotificationProps> = ({
                 name={displayName}
                 avatarUrl={notification.avatarUrl}
                 size="md"
-                className="shrink-0 ring-2 ring-indigo-100 shadow-xs"
+                className="shrink-0 ring-2 ring-indigo-100 dark:ring-indigo-800 shadow-xs"
               />
 
               <div className="min-w-0 flex-1">
@@ -149,7 +149,7 @@ export const PopupNotification: React.FC<PopupNotificationProps> = ({
                   className="text-[11px] text-indigo-600 dark:text-indigo-300 hover:text-indigo-800 dark:hover:text-indigo-200 flex items-center gap-1 font-semibold hover:underline cursor-pointer bg-indigo-50/80 dark:bg-indigo-950/60 px-2 py-0.5 rounded-lg border border-indigo-100 dark:border-indigo-800"
                   title={isRu ? 'Включить системные уведомления рабочего стола' : 'Enable desktop notifications'}
                 >
-                  <Bell className="w-3 h-3 text-[#471AFF]" />
+                  <Bell className="w-3 h-3 text-[#471AFF] dark:text-indigo-300" />
                   <span>{isRu ? 'Включить в браузере' : 'Enable in browser'}</span>
                 </button>
               ) : (

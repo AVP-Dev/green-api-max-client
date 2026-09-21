@@ -59,14 +59,14 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
               <UserPlus className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-sm">{t.newChatModalTitle}</h3>
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 dark:text-white text-sm">{t.newChatModalTitle}</h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">{t.newChatModalSubtitle}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -79,7 +79,7 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
               {t.phoneLabel}
             </label>
             <div className="relative">
-              <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Phone className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 autoFocus
@@ -89,7 +89,7 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
                   if (error) setError(null);
                 }}
                 placeholder={t.phonePlaceholder}
-                className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#471AFF]/20 focus:border-[#471AFF] focus:bg-white dark:focus:bg-slate-800 transition-all font-mono"
+                className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#471AFF]/20 focus:border-[#471AFF] focus:bg-white dark:focus:bg-slate-800 transition-all font-mono"
               />
             </div>
           </div>
@@ -124,7 +124,7 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
             <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
               <div className="flex items-center justify-between text-[11px] mb-2">
                 <span className="font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-                  <BookUser className="w-3.5 h-3.5 text-[#471AFF] dark:text-indigo-400" />
+                  <BookUser className="w-3.5 h-3.5 text-[#471AFF] dark:text-indigo-300 dark:text-indigo-400" />
                   <span>{t.chooseFromContacts || (lang === 'ru' ? 'Или выберите из записной книжки:' : 'Or select from address book:')}</span>
                 </span>
                 {onOpenAddressBook && (
@@ -188,7 +188,7 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+              className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-200 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
             >
               {t.cancel}
             </button>

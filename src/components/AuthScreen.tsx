@@ -103,7 +103,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onConnect, lang, onToggl
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white/90 dark:bg-slate-800/90 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700 rounded-xl hover:border-slate-300 dark:hover:border-slate-600 transition-colors shadow-2xs cursor-pointer"
           title={t.switchLanguage}
         >
-          <Globe className="w-3.5 h-3.5 text-slate-400" />
+          <Globe className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
           <span>{lang.toUpperCase()}</span>
         </button>
       </div>
@@ -114,7 +114,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onConnect, lang, onToggl
           <div className="w-13 h-13 rounded-2xl max-gradient-primary text-white flex items-center justify-center mx-auto mb-3.5 max-gradient-glow">
             <KeyRound className="w-6 h-6" />
           </div>
-          <h1 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{t.authTitle}</h1>
+          <h1 className="text-xl font-black text-slate-900 dark:text-slate-100 dark:text-white tracking-tight">{t.authTitle}</h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 max-w-xs mx-auto leading-relaxed">
             {t.authSubtitle}
           </p>
@@ -129,7 +129,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onConnect, lang, onToggl
               <button
                 type="button"
                 onClick={handleBypassConnect}
-                className="self-start text-[11px] underline font-medium text-rose-800 dark:text-rose-300 hover:text-rose-900 dark:hover:text-rose-200 mt-0.5 cursor-pointer"
+                className="self-start text-[11px] underline font-medium text-rose-800 dark:text-rose-200 dark:text-rose-300 hover:text-rose-900 dark:hover:text-rose-200 mt-0.5 cursor-pointer"
               >
                 {lang === 'ru' ? 'Продолжить всё равно (пропустить проверку)' : 'Continue anyway (skip check)'}
               </button>
@@ -151,7 +151,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onConnect, lang, onToggl
               autoComplete="off"
               inputMode="numeric"
               maxLength={32}
-              className="w-full px-3.5 py-2.5 bg-slate-50/70 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#471AFF]/20 focus:border-[#471AFF] focus:bg-white dark:focus:bg-slate-800 transition-all font-mono"
+              className="w-full px-3.5 py-2.5 bg-slate-50/70 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#471AFF]/20 focus:border-[#471AFF] focus:bg-white dark:focus:bg-slate-800 transition-all font-mono"
             />
           </div>
 
@@ -167,7 +167,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onConnect, lang, onToggl
               placeholder={t.apiTokenPlaceholder}
               autoComplete="new-password"
               maxLength={256}
-              className="w-full px-3.5 py-2.5 bg-slate-50/70 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#471AFF]/20 focus:border-[#471AFF] focus:bg-white dark:focus:bg-slate-800 transition-all font-mono text-xs"
+              className="w-full px-3.5 py-2.5 bg-slate-50/70 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#471AFF]/20 focus:border-[#471AFF] focus:bg-white dark:focus:bg-slate-800 transition-all font-mono text-xs"
             />
           </div>
 
@@ -178,7 +178,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onConnect, lang, onToggl
               onChange={(e) => setRememberMe(e.target.checked)}
               className="mt-0.5 w-4 h-4 rounded accent-[#471AFF] cursor-pointer"
             />
-            <span className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-400">
+            <span className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300 dark:text-slate-400">
               <span className="font-semibold text-slate-700 dark:text-slate-200">
                 {lang === 'ru' ? 'Запомнить на этом устройстве' : 'Remember on this device'}
               </span>
@@ -198,7 +198,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onConnect, lang, onToggl
             >
               <Globe className="w-3.5 h-3.5" />
               <span>{t.gatewayUrlLabel}</span>
-              <span className="text-[10px] text-slate-400 font-mono">
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
                 {showAdvancedGateway ? '▲' : '▼'}
               </span>
             </button>
@@ -213,7 +213,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onConnect, lang, onToggl
                   className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#471AFF]/20 focus:border-[#471AFF]"
                 />
                 {apiUrl.trim() && !isTrustedGatewayUrl(apiUrl.trim()) && (
-                  <p className="text-[11px] text-rose-600 leading-relaxed">
+                  <p className="text-[11px] text-rose-600 dark:text-rose-400 leading-relaxed">
                     {lang === 'ru'
                       ? '⚠️ Домен вне allowlist — разрешены только *.green-api.com и *.greenapi.com (https). HTTP запрещён.'
                       : '⚠️ Domain not allowlisted — only *.green-api.com and *.greenapi.com (https) are allowed. HTTP is forbidden.'}
@@ -259,7 +259,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onConnect, lang, onToggl
         </form>
 
         {/* Help / where to get credentials */}
-        <div className="mt-5 pt-5 border-t border-slate-100 flex flex-col gap-2.5">
+        <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2.5">
 
           <button
             type="button"

@@ -155,10 +155,10 @@ maxIframe.postMessage({ type: 'MAX_SYNC_CONTACTS', payload: {} }, MAX_WIDGET_ORI
           <Code2 className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+          <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 dark:text-white">
             {lang === 'ru' ? 'Интеграция MAX в любые сервисы' : 'MAX Integration for Any Service'}
           </h4>
-          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
+          <p className="text-[11px] text-slate-600 dark:text-slate-300 dark:text-slate-400 mt-0.5 leading-relaxed">
             {lang === 'ru'
               ? 'Встраивайте полнофункциональный веб-клиент MAX в Bitrix24, amoCRM, 1С, внутренние дашборды или сайты через Iframe, URL-параметры или postMessage SDK.'
               : 'Embed the full-featured MAX web client into CRMs, dashboards, and internal portals using Iframe, URL parameters, or postMessage SDK.'}
@@ -224,7 +224,7 @@ maxIframe.postMessage({ type: 'MAX_SYNC_CONTACTS', payload: {} }, MAX_WIDGET_ORI
           <div className="space-y-4">
             <div className="p-4 bg-slate-50/80 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-200 space-y-3">
               <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100 text-xs">
-                <Sliders className="w-4 h-4 text-[#471AFF]" />
+                <Sliders className="w-4 h-4 text-[#471AFF] dark:text-indigo-300" />
                 <span>{lang === 'ru' ? 'Конфигуратор встраивания в CRM / Портал' : 'CRM & Portal Embed Configurator'}</span>
               </div>
 
@@ -234,12 +234,12 @@ maxIframe.postMessage({ type: 'MAX_SYNC_CONTACTS', payload: {} }, MAX_WIDGET_ORI
                     type="checkbox"
                     checked={includeCreds}
                     onChange={(e) => setIncludeCreds(e.target.checked)}
-                    className="rounded text-[#471AFF] focus:ring-[#471AFF]"
+                    className="rounded text-[#471AFF] dark:text-indigo-300 focus:ring-[#471AFF]"
                   />
                   <span className="text-slate-700 dark:text-slate-200">{lang === 'ru' ? 'Включить ключи авторизации (авто-вход)' : 'Auto-login credentials in URL'}</span>
                 </label>
                 {includeCreds && (
-                  <div className="col-span-1 sm:col-span-2 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
+                  <div className="col-span-1 sm:col-span-2 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-800 dark:text-amber-200 dark:text-amber-300 leading-relaxed">
                     {lang === 'ru'
                       ? '⚠️ Небезопасно: ключи в URL сохраняются в истории браузера, логах серверов/прокси и передаются в заголовке Referer. Рекомендуется postMessage MAX_SET_CREDS или ручной ввод — отключите эту опцию.'
                       : '⚠️ Unsafe: credentials in the URL persist in browser history, server/proxy logs and leak via the Referer header. Prefer postMessage MAX_SET_CREDS or manual entry — turn this option off.'}
@@ -251,7 +251,7 @@ maxIframe.postMessage({ type: 'MAX_SYNC_CONTACTS', payload: {} }, MAX_WIDGET_ORI
                     type="checkbox"
                     checked={embedMode}
                     onChange={(e) => setEmbedMode(e.target.checked)}
-                    className="rounded text-[#471AFF] focus:ring-[#471AFF]"
+                    className="rounded text-[#471AFF] dark:text-indigo-300 focus:ring-[#471AFF]"
                   />
                   <span className="text-slate-700 dark:text-slate-200">{lang === 'ru' ? 'Компактный режим виджета (embedded=true)' : 'Compact embed mode'}</span>
                 </label>
@@ -311,7 +311,7 @@ maxIframe.postMessage({ type: 'MAX_SYNC_CONTACTS', payload: {} }, MAX_WIDGET_ORI
                 <button
                   type="button"
                   onClick={() => copyToClipboard(iframeCode, 'iframe')}
-                  className="inline-flex items-center gap-1.5 text-xs text-[#471AFF] hover:underline font-semibold cursor-pointer"
+                  className="inline-flex items-center gap-1.5 text-xs text-[#471AFF] dark:text-indigo-300 hover:underline font-semibold cursor-pointer"
                 >
                   {copiedKey === 'iframe' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copiedKey === 'iframe' ? (lang === 'ru' ? 'Скопировано!' : 'Copied!') : (lang === 'ru' ? 'Скопировать код' : 'Copy code')}</span>
@@ -341,7 +341,7 @@ maxIframe.postMessage({ type: 'MAX_SYNC_CONTACTS', payload: {} }, MAX_WIDGET_ORI
                   <button
                     type="button"
                     onClick={() => copyToClipboard(embedUrl, 'url')}
-                    className="inline-flex items-center gap-1.5 text-xs text-[#471AFF] hover:underline font-semibold cursor-pointer"
+                    className="inline-flex items-center gap-1.5 text-xs text-[#471AFF] dark:text-indigo-300 hover:underline font-semibold cursor-pointer"
                   >
                     {copiedKey === 'url' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copiedKey === 'url' ? (lang === 'ru' ? 'Скопировано!' : 'Copied!') : (lang === 'ru' ? 'Скопировать ссылку' : 'Copy link')}</span>
@@ -366,62 +366,62 @@ maxIframe.postMessage({ type: 'MAX_SYNC_CONTACTS', payload: {} }, MAX_WIDGET_ORI
                 ? 'Вы можете передавать любые параметры через GET-запрос URL для автоматической авторизации и открытия диалогов с клиентами из вашей системы:'
                 : 'You can pass query parameters to automate login and open specific chats directly from external systems:'}
             </p>
-            <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
+            <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-800 dark:text-amber-200 dark:text-amber-300 leading-relaxed">
               {lang === 'ru'
                 ? '⚠️ Deprecated/unsafe: idInstance и apiTokenInstance в URL — утечка в историю/логи/Referer. Параметры стираются из адресной строки после чтения, но для новых интеграций используйте postMessage MAX_SET_CREDS или ручной ввод.'
                 : '⚠️ Deprecated/unsafe: idInstance and apiTokenInstance in the URL leak to history/logs/Referer. They are stripped from the address bar after reading, but for new integrations use postMessage MAX_SET_CREDS or manual entry.'}
             </div>
 
             <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-900 text-xs">
-              <div className="p-3 bg-slate-50 dark:bg-slate-800 font-bold grid grid-cols-12 gap-2 text-slate-800 dark:text-slate-200 text-[11px]">
+              <div className="p-3 bg-slate-50 dark:bg-slate-800 font-bold grid grid-cols-12 gap-2 text-slate-800 dark:text-slate-100 dark:text-slate-200 text-[11px]">
                 <div className="col-span-3">Параметр</div>
                 <div className="col-span-4">Пример</div>
                 <div className="col-span-5">Описание</div>
               </div>
 
-              <div className="p-3 grid grid-cols-12 gap-2 items-center text-slate-700 dark:text-slate-300">
+              <div className="p-3 grid grid-cols-12 gap-2 items-center text-slate-700 dark:text-slate-200 dark:text-slate-300">
                 <div className="col-span-3 font-mono text-[#471AFF] dark:text-indigo-300 font-bold">idInstance</div>
                 <div className="col-span-4 font-mono text-slate-500 dark:text-slate-400">310022742216</div>
                 <div className="col-span-5 text-slate-600 dark:text-slate-300">ID инстанса GREEN-API для авто-подключения</div>
               </div>
 
-              <div className="p-3 grid grid-cols-12 gap-2 items-center text-slate-700 dark:text-slate-300">
+              <div className="p-3 grid grid-cols-12 gap-2 items-center text-slate-700 dark:text-slate-200 dark:text-slate-300">
                 <div className="col-span-3 font-mono text-[#471AFF] dark:text-indigo-300 font-bold">apiTokenInstance</div>
                 <div className="col-span-4 font-mono text-slate-500 dark:text-slate-400">abcdef1234567890...</div>
                 <div className="col-span-5 text-slate-600 dark:text-slate-300">Секретный токен API для доступа к шлюзу</div>
               </div>
 
-              <div className="p-3 grid grid-cols-12 gap-2 items-center text-slate-700 dark:text-slate-300">
+              <div className="p-3 grid grid-cols-12 gap-2 items-center text-slate-700 dark:text-slate-200 dark:text-slate-300">
                 <div className="col-span-3 font-mono text-[#471AFF] dark:text-indigo-300 font-bold">apiUrl</div>
                 <div className="col-span-4 font-mono text-slate-500 dark:text-slate-400">https://3100.api.green-api.com</div>
                 <div className="col-span-5 text-slate-600 dark:text-slate-300">Кастомный хост шлюза ноды (опционально)</div>
               </div>
 
-              <div className="p-3 grid grid-cols-12 gap-2 items-center text-slate-700 dark:text-slate-300">
+              <div className="p-3 grid grid-cols-12 gap-2 items-center text-slate-700 dark:text-slate-200 dark:text-slate-300">
                 <div className="col-span-3 font-mono text-[#471AFF] dark:text-indigo-300 font-bold">chatId</div>
                 <div className="col-span-4 font-mono text-slate-500 dark:text-slate-400">79991234567</div>
                 <div className="col-span-5 text-slate-600 dark:text-slate-300">Номер телефона клиента (открыть диалог сразу)</div>
               </div>
 
-              <div className="p-3 grid grid-cols-12 gap-2 items-center text-slate-700 dark:text-slate-300">
+              <div className="p-3 grid grid-cols-12 gap-2 items-center text-slate-700 dark:text-slate-200 dark:text-slate-300">
                 <div className="col-span-3 font-mono text-[#471AFF] dark:text-indigo-300 font-bold">name</div>
                 <div className="col-span-4 font-mono text-slate-500 dark:text-slate-400">Алексей Иванов</div>
                 <div className="col-span-5 text-slate-600 dark:text-slate-300">Имя контакта для сохранения в записную книжку</div>
               </div>
 
-              <div className="p-3 grid grid-cols-12 gap-2 items-center text-slate-700 dark:text-slate-300">
+              <div className="p-3 grid grid-cols-12 gap-2 items-center text-slate-700 dark:text-slate-200 dark:text-slate-300">
                 <div className="col-span-3 font-mono text-[#471AFF] dark:text-indigo-300 font-bold">text</div>
                 <div className="col-span-4 font-mono text-slate-500 dark:text-slate-400">Здравствуйте! Ваш заказ готов</div>
                 <div className="col-span-5 text-slate-600 dark:text-slate-300">Предзаполненный текст в строке ввода</div>
               </div>
 
-              <div className="p-3 grid grid-cols-12 gap-2 items-center text-slate-700 dark:text-slate-300">
+              <div className="p-3 grid grid-cols-12 gap-2 items-center text-slate-700 dark:text-slate-200 dark:text-slate-300">
                 <div className="col-span-3 font-mono text-[#471AFF] dark:text-indigo-300 font-bold">embedded</div>
                 <div className="col-span-4 font-mono text-slate-500 dark:text-slate-400">true</div>
                 <div className="col-span-5 text-slate-600 dark:text-slate-300">Скрывает внешние рамки для компактного встраивания в окно CRM</div>
               </div>
 
-              <div className="p-3 grid grid-cols-12 gap-2 items-center text-slate-700 dark:text-slate-300">
+              <div className="p-3 grid grid-cols-12 gap-2 items-center text-slate-700 dark:text-slate-200 dark:text-slate-300">
                 <div className="col-span-3 font-mono text-[#471AFF] dark:text-indigo-300 font-bold">parentOrigin</div>
                 <div className="col-span-4 font-mono text-slate-500 dark:text-slate-400">https://crm.example.com</div>
                 <div className="col-span-5 text-slate-600 dark:text-slate-300">Доверенный origin родителя для postMessage (fail-closed в проде без него)</div>
@@ -447,7 +447,7 @@ maxIframe.postMessage({ type: 'MAX_SYNC_CONTACTS', payload: {} }, MAX_WIDGET_ORI
                 <button
                   type="button"
                   onClick={() => copyToClipboard(postMessageSampleCode, 'postmessage')}
-                  className="inline-flex items-center gap-1.5 text-xs text-[#471AFF] hover:underline font-semibold cursor-pointer"
+                  className="inline-flex items-center gap-1.5 text-xs text-[#471AFF] dark:text-indigo-300 hover:underline font-semibold cursor-pointer"
                 >
                   {copiedKey === 'postmessage' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copiedKey === 'postmessage' ? (lang === 'ru' ? 'Скопировано!' : 'Copied!') : (lang === 'ru' ? 'Скопировать код' : 'Copy code')}</span>
@@ -483,7 +483,7 @@ maxIframe.postMessage({ type: 'MAX_SYNC_CONTACTS', payload: {} }, MAX_WIDGET_ORI
                         'curl_send'
                       )
                     }
-                    className="text-[11px] text-[#471AFF] hover:underline cursor-pointer flex items-center gap-1"
+                    className="text-[11px] text-[#471AFF] dark:text-indigo-300 hover:underline cursor-pointer flex items-center gap-1"
                   >
                     {copiedKey === 'curl_send' ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                     <span>cURL</span>
@@ -510,7 +510,7 @@ maxIframe.postMessage({ type: 'MAX_SYNC_CONTACTS', payload: {} }, MAX_WIDGET_ORI
                         'curl_poll'
                       )
                     }
-                    className="text-[11px] text-[#471AFF] hover:underline cursor-pointer flex items-center gap-1"
+                    className="text-[11px] text-[#471AFF] dark:text-indigo-300 hover:underline cursor-pointer flex items-center gap-1"
                   >
                     {copiedKey === 'curl_poll' ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                     <span>cURL</span>

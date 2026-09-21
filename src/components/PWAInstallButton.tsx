@@ -39,13 +39,13 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
   if (isInstalled) {
     if (variant === 'card') {
       return (
-        <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200/80 text-emerald-800">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+        <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 text-emerald-800 dark:text-emerald-200">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
           <div className="text-xs">
             <p className="font-semibold">
               {isRu ? 'Приложение установлено' : 'App is installed'}
             </p>
-            <p className="text-emerald-700/80 text-[11px] mt-0.5">
+            <p className="text-emerald-700 dark:text-emerald-300/80 text-[11px] mt-0.5">
               {isRu ? 'MAX Web работает в автономном режиме PWA' : 'MAX Web is running as a standalone PWA'}
             </p>
           </div>
@@ -66,7 +66,7 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
                 <Smartphone className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 dark:text-white">
                   {isRu ? 'Установить MAX Web' : 'Install MAX Web'}
                 </h4>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
@@ -101,14 +101,14 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Smartphone className="w-4 h-4 text-[#471AFF] dark:text-indigo-400" />
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 dark:text-white flex items-center gap-2">
+                  <Smartphone className="w-4 h-4 text-[#471AFF] dark:text-indigo-300 dark:text-indigo-400" />
                   {isRu ? 'Установка на iPhone / iPad' : 'Install on iPhone / iPad'}
                 </h3>
                 <button
                   type="button"
                   onClick={() => setShowIOSGuide(false)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="p-1 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -138,7 +138,7 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
                       {isRu ? 'Выберите «На экран Домой»' : 'Choose «Add to Home Screen»'}
                     </p>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1">
-                      <PlusSquare className="w-3.5 h-3.5 text-slate-700 dark:text-slate-300 inline" /> {isRu ? 'Прокрутите список действий вниз' : 'Scroll down the actions list'}
+                      <PlusSquare className="w-3.5 h-3.5 text-slate-700 dark:text-slate-200 dark:text-slate-300 inline" /> {isRu ? 'Прокрутите список действий вниз' : 'Scroll down the actions list'}
                     </p>
                   </div>
                 </div>
@@ -197,13 +197,13 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 dark:text-white">
                 {isRu ? 'Установка на iOS' : 'Install on iOS'}
               </h3>
               <button
                 type="button"
                 onClick={() => setShowIOSGuide(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="p-1 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 dark:hover:text-slate-200"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -216,7 +216,7 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
             <button
               type="button"
               onClick={() => setShowIOSGuide(false)}
-              className="mt-4 w-full py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+              className="mt-4 w-full py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 dark:text-slate-200 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
             >
               {isRu ? 'Закрыть' : 'Close'}
             </button>

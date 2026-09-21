@@ -117,18 +117,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
     switch (pollingStatus) {
       case 'active':
         return (
-          <span className="flex items-center gap-1.5 text-[11px] text-emerald-600 font-medium min-w-0 truncate" title={t.statusActive}>
+          <span className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium min-w-0 truncate" title={t.statusActive}>
             <span className="relative flex h-2 w-2 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-50 dark:bg-emerald-950/400"></span>
             </span>
             <span className="truncate">{t.statusActive}</span>
           </span>
         );
       case 'reconnecting':
         return (
-          <span className="flex items-center gap-1.5 text-[11px] text-amber-600 font-medium min-w-0 truncate" title={t.statusReconnecting}>
-            <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
+          <span className="flex items-center gap-1.5 text-[11px] text-amber-600 dark:text-amber-400 font-medium min-w-0 truncate" title={t.statusReconnecting}>
+            <span className="inline-block w-2 h-2 rounded-full bg-amber-50 dark:bg-amber-950/400 animate-pulse shrink-0"></span>
             <span className="truncate">{t.statusReconnecting}</span>
           </span>
         );
@@ -137,7 +137,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             type="button"
             onClick={handleRetry}
-            className="flex items-center gap-1.5 text-[11px] text-rose-600 font-medium min-w-0 truncate hover:text-rose-700 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-[11px] text-rose-600 dark:text-rose-400 font-medium min-w-0 truncate hover:text-rose-700 transition-colors cursor-pointer"
             title={`${pollingErrorMessage || t.statusError} (${lang === 'ru' ? 'Нажмите для повтора' : 'Click to retry'})`}
           >
             <span className="inline-block w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
@@ -147,7 +147,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         );
       default:
         return (
-          <span className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium min-w-0 truncate">
+          <span className="flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500 font-medium min-w-0 truncate">
             <span className="inline-block w-2 h-2 rounded-full bg-slate-300 shrink-0"></span>
             <span className="truncate">{t.statusPaused}</span>
           </span>
@@ -163,10 +163,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <MaxLogo id="sidebar-logo" size="md" variant="icon" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 min-w-0">
-              <span className="font-bold text-xs text-slate-900 dark:text-white truncate shrink-0">
+              <span className="font-bold text-xs text-slate-900 dark:text-slate-100 dark:text-white truncate shrink-0">
                 {t.appName}
               </span>
-              <span className="text-[10px] font-mono text-slate-500 truncate">
+              <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 truncate">
                 #{creds.idInstance}
               </span>
             </div>
@@ -182,7 +182,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               type="button"
               onClick={onSyncMessages}
               disabled={isSyncingMessages}
-              className={`p-2 text-slate-500 hover:text-[#471AFF] hover:bg-indigo-50 rounded-xl transition-colors cursor-pointer disabled:opacity-50 ${
+              className={`p-2 text-slate-500 dark:text-slate-400 hover:text-[#471AFF] dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 rounded-xl transition-colors cursor-pointer disabled:opacity-50 ${
                 isSyncingMessages ? 'text-[#471AFF]' : ''
               }`}
               title={t.syncHistory24h}
@@ -196,7 +196,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               id="sidebar-address-book-button"
               type="button"
               onClick={onOpenAddressBook}
-              className="p-2 text-slate-500 hover:text-[#471AFF] hover:bg-indigo-50 rounded-xl transition-colors cursor-pointer"
+              className="p-2 text-slate-500 dark:text-slate-400 hover:text-[#471AFF] dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 rounded-xl transition-colors cursor-pointer"
               title={lang === 'ru' ? 'Записная книжка MAX' : 'MAX Address Book'}
             >
               <BookUser className="w-4 h-4" />
@@ -207,7 +207,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             id="sidebar-settings-button"
             type="button"
             onClick={onOpenSettings}
-            className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+            className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
             title={t.settingsTitle}
           >
             <SettingsIcon className="w-4 h-4" />
@@ -216,16 +216,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Search & New Chat Bar */}
-      <div className="p-3 border-b border-slate-100 flex items-center gap-2">
+      <div className="p-3 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             ref={searchInputRef}
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t.searchPlaceholder}
-            className="w-full pl-9 pr-8 py-2 sm:py-1.5 bg-slate-100/80 dark:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 focus:border-[#471AFF] focus:ring-1 focus:ring-[#471AFF]/20 rounded-xl text-[16px] sm:text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:bg-white dark:focus:bg-slate-800 transition-all"
+            className="w-full pl-9 pr-8 py-2 sm:py-1.5 bg-slate-100/80 dark:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 focus:border-[#471AFF] focus:ring-1 focus:ring-[#471AFF]/20 rounded-xl text-[16px] sm:text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-800 transition-all"
           />
           {searchQuery && (
             <button
@@ -235,7 +235,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 setSearchQuery('');
                 searchInputRef.current?.focus();
               }}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-0.5 rounded-md cursor-pointer transition-colors"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 p-0.5 rounded-md cursor-pointer transition-colors"
               title={lang === 'ru' ? 'Очистить поиск' : 'Clear search'}
             >
               <X className="w-3.5 h-3.5" />
@@ -379,7 +379,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </span>
                     <div className="flex items-center gap-1 shrink-0">
                       {dialog.isPinned && (
-                        <span title={t.pinned} className="text-[#471AFF] dark:text-indigo-400 flex items-center">
+                        <span title={t.pinned} className="text-[#471AFF] dark:text-indigo-300 dark:text-indigo-400 flex items-center">
                           <Pin className="w-3 h-3 fill-[#471AFF] dark:fill-indigo-400 rotate-45" />
                         </span>
                       )}
@@ -446,7 +446,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       e.stopPropagation();
                       onDeleteChat(dialog.chatId);
                     }}
-                    className="p-1.5 sm:p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-md transition-colors cursor-pointer"
+                    className="p-1.5 sm:p-1 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-md transition-colors cursor-pointer"
                     title={t.deleteChat}
                   >
                     <Trash2 className="w-3.5 h-3.5" />

@@ -68,13 +68,13 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           id="mobile-nav-new-chat-button"
           type="button"
           onClick={onOpenNewChat}
-          className="flex flex-col items-center justify-center py-1 rounded-2xl text-slate-600 dark:text-slate-400 hover:text-[#471AFF] dark:hover:text-indigo-300 transition-all cursor-pointer min-h-[52px] group active:scale-95"
+          className="flex flex-col items-center justify-center py-1 rounded-2xl text-slate-600 dark:text-slate-300 dark:text-slate-400 hover:text-[#471AFF] dark:hover:text-indigo-300 transition-all cursor-pointer min-h-[52px] group active:scale-95"
           title={t.bottomNavNewChat}
         >
           <div className="w-8 h-8 rounded-full max-gradient-primary text-white flex items-center justify-center shadow-sm group-hover:shadow-indigo-300/40 transition-all">
             <UserPlus className="w-4 h-4 ml-0.5" />
           </div>
-          <span className="text-[11px] mt-1 font-semibold text-slate-700 dark:text-slate-300 tracking-tight truncate max-w-full text-center px-0.5">
+          <span className="text-[11px] mt-1 font-semibold text-slate-700 dark:text-slate-200 dark:text-slate-300 tracking-tight truncate max-w-full text-center px-0.5">
             {t.bottomNavNewChat}
           </span>
         </button>

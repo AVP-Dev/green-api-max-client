@@ -44,10 +44,10 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="min-h-screen w-full bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6 text-slate-900 dark:text-slate-100 font-sans select-none">
           <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-700 shadow-xl p-6 sm:p-8 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto mb-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto mb-4">
               <AlertCircle className="w-6 h-6" />
             </div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 dark:text-white mb-2">
               Произошла непредвиденная ошибка
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">

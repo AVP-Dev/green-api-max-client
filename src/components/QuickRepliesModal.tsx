@@ -123,11 +123,11 @@ export const QuickRepliesModal: React.FC<QuickRepliesModalProps> = ({
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#00BFFF]/20 via-[#471AFF]/20 to-[#9500FF]/20 flex items-center justify-center text-[#471AFF] shadow-2xs">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#00BFFF]/20 via-[#471AFF]/20 to-[#9500FF]/20 flex items-center justify-center text-[#471AFF] dark:text-indigo-300 shadow-2xs">
               <Zap className="w-5 h-5 fill-[#471AFF]/10" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 dark:text-white leading-tight flex items-center gap-2">
                 <span>{t.quickRepliesTitle}</span>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-[#471AFF] dark:text-indigo-300 font-semibold border border-indigo-100 dark:border-indigo-800">
                   {quickReplies.length}
@@ -139,7 +139,7 @@ export const QuickRepliesModal: React.FC<QuickRepliesModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -161,7 +161,7 @@ export const QuickRepliesModal: React.FC<QuickRepliesModalProps> = ({
                 <button
                   type="button"
                   onClick={cancelEdit}
-                  className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer"
+                  className="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer"
                 >
                   {t.cancel}
                 </button>
@@ -185,7 +185,7 @@ export const QuickRepliesModal: React.FC<QuickRepliesModalProps> = ({
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1 flex items-center justify-between">
                   <span>{t.quickReplyTextLabel}</span>
-                  <span className="text-[10px] text-slate-400 font-normal">
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
                     {textInput.length}/1000
                   </span>
                 </label>
@@ -258,7 +258,7 @@ export const QuickRepliesModal: React.FC<QuickRepliesModalProps> = ({
               <div className="text-center py-10 px-4 bg-slate-50/60 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
                 <MessageSquare className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
                 <p className="text-xs font-bold text-slate-700 dark:text-slate-200">{t.noQuickReplies}</p>
-                <p className="text-[11px] text-slate-400 mt-1 max-w-xs mx-auto">
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 max-w-xs mx-auto">
                   {t.noQuickRepliesDesc}
                 </p>
                 {editingId === null && (
@@ -305,7 +305,7 @@ export const QuickRepliesModal: React.FC<QuickRepliesModalProps> = ({
                       <div className="flex items-center gap-1 shrink-0 pt-0.5">
                         {isConfirmingDelete ? (
                           <div className="flex items-center gap-1 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl px-2 py-1 animate-in fade-in duration-150">
-                            <span className="text-[10px] text-rose-600 dark:text-rose-300 font-medium">
+                            <span className="text-[10px] text-rose-600 dark:text-rose-400 dark:text-rose-300 font-medium">
                               {lang === 'ru' ? 'Удалить?' : 'Delete?'}
                             </span>
                             <button
@@ -342,7 +342,7 @@ export const QuickRepliesModal: React.FC<QuickRepliesModalProps> = ({
                               type="button"
                               onClick={() => startEdit(reply)}
                               title={t.editQuickReply}
-                              className="p-1.5 text-slate-400 hover:text-[#471AFF] dark:hover:text-indigo-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-[#471AFF] dark:hover:text-indigo-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
@@ -350,7 +350,7 @@ export const QuickRepliesModal: React.FC<QuickRepliesModalProps> = ({
                               type="button"
                               onClick={() => setDeleteConfirmId(reply.id)}
                               title={t.deleteQuickReply}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition-colors cursor-pointer"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>

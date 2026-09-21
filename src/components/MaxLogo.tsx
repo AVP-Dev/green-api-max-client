@@ -117,15 +117,15 @@ export const MaxLogo: React.FC<MaxLogoProps> = ({
       {iconElement}
       <div className="flex flex-col">
         <div className="flex items-center gap-1.5 leading-none">
-          <span className={`font-black text-slate-900 tracking-tight font-sans ${cfg.text}`}>
+          <span className={`font-black text-slate-900 dark:text-slate-100 tracking-tight font-sans ${cfg.text}`}>
             MAX
           </span>
-          <span className={`font-bold bg-indigo-50 text-[#471AFF] border border-indigo-100/80 rounded-md tracking-wider ${cfg.badge}`}>
+          <span className={`font-bold bg-indigo-50 dark:bg-indigo-950/60 text-[#471AFF] dark:text-indigo-300 border border-indigo-100/80 dark:border-indigo-800 rounded-md tracking-wider ${cfg.badge}`}>
             WEB
           </span>
         </div>
         {showDomain && (
-          <span className="text-[11px] font-semibold text-slate-400 tracking-tight mt-0.5">
+          <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 tracking-tight mt-0.5">
             max.ru
           </span>
         )}

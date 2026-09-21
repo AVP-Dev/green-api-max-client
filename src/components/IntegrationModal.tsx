@@ -147,7 +147,7 @@ maxIframe.postMessage({
               <Code2 className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 dark:text-white text-sm sm:text-base">
                 {lang === 'ru' ? 'Интеграция MAX в любые сервисы' : 'Integrate MAX into Any Service'}
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -161,7 +161,7 @@ maxIframe.postMessage({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -225,7 +225,7 @@ maxIframe.postMessage({
             <div className="space-y-4">
               <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-200 space-y-3">
                 <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100 text-xs">
-                  <Sliders className="w-4 h-4 text-[#471AFF] dark:text-indigo-400" />
+                  <Sliders className="w-4 h-4 text-[#471AFF] dark:text-indigo-300 dark:text-indigo-400" />
                   <span>{lang === 'ru' ? 'Конфигуратор встраивания в CRM / Портал' : 'CRM & Portal Embed Configurator'}</span>
                 </div>
 
@@ -235,12 +235,12 @@ maxIframe.postMessage({
                       type="checkbox"
                       checked={includeCreds}
                       onChange={(e) => setIncludeCreds(e.target.checked)}
-                      className="rounded text-[#471AFF] focus:ring-[#471AFF]"
+                      className="rounded text-[#471AFF] dark:text-indigo-300 focus:ring-[#471AFF]"
                     />
                     <span>{lang === 'ru' ? 'Включить ключи авторизации (авто-вход)' : 'Auto-login credentials in URL'}</span>
                   </label>
                   {includeCreds && (
-                    <div className="col-span-1 sm:col-span-2 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
+                    <div className="col-span-1 sm:col-span-2 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-800 dark:text-amber-200 dark:text-amber-300 leading-relaxed">
                       {lang === 'ru'
                         ? '⚠️ Небезопасно: ключи в URL сохраняются в истории браузера, логах серверов/прокси и передаются в заголовке Referer. Рекомендуется postMessage MAX_SET_CREDS или ручной ввод — отключите эту опцию.'
                         : '⚠️ Unsafe: credentials in the URL persist in browser history, server/proxy logs and leak via the Referer header. Prefer postMessage MAX_SET_CREDS or manual entry — turn this option off.'}
@@ -252,7 +252,7 @@ maxIframe.postMessage({
                       type="checkbox"
                       checked={embedMode}
                       onChange={(e) => setEmbedMode(e.target.checked)}
-                      className="rounded text-[#471AFF] focus:ring-[#471AFF]"
+                      className="rounded text-[#471AFF] dark:text-indigo-300 focus:ring-[#471AFF]"
                     />
                     <span>{lang === 'ru' ? 'Компактный режим виджета (embedded=true)' : 'Compact embed mode'}</span>
                   </label>
@@ -338,7 +338,7 @@ maxIframe.postMessage({
                     )}
                   </button>
                 </div>
-                <div className="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-lg text-xs font-mono break-all select-all border border-slate-200 dark:border-slate-700">
+                <div className="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 dark:text-slate-200 rounded-lg text-xs font-mono break-all select-all border border-slate-200 dark:border-slate-700">
                   {embedUrl}
                 </div>
               </div>
@@ -363,41 +363,41 @@ maxIframe.postMessage({
                       <th className="p-3">Назначение</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono text-slate-800 dark:text-slate-200">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono text-slate-800 dark:text-slate-100 dark:text-slate-200">
                     <tr>
                       <td className="p-3 font-bold text-[#471AFF] dark:text-indigo-300">idInstance</td>
-                      <td className="p-3 text-slate-600 dark:text-slate-400">1101823456</td>
-                      <td className="p-3 font-sans text-slate-700 dark:text-slate-300">Идентификатор инстанса GREEN-API (авто-вход)</td>
+                      <td className="p-3 text-slate-600 dark:text-slate-300 dark:text-slate-400">1101823456</td>
+                      <td className="p-3 font-sans text-slate-700 dark:text-slate-200 dark:text-slate-300">Идентификатор инстанса GREEN-API (авто-вход)</td>
                     </tr>
                     <tr>
                       <td className="p-3 font-bold text-[#471AFF] dark:text-indigo-300">apiTokenInstance</td>
-                      <td className="p-3 text-slate-600 dark:text-slate-400">e3b0c44298fc1c149...</td>
-                      <td className="p-3 font-sans text-slate-700 dark:text-slate-300">Секретный API токен для доступа к шлюзу</td>
+                      <td className="p-3 text-slate-600 dark:text-slate-300 dark:text-slate-400">e3b0c44298fc1c149...</td>
+                      <td className="p-3 font-sans text-slate-700 dark:text-slate-200 dark:text-slate-300">Секретный API токен для доступа к шлюзу</td>
                     </tr>
                     <tr>
                       <td className="p-3 font-bold text-[#471AFF] dark:text-indigo-300">chatId / phone</td>
-                      <td className="p-3 text-slate-600 dark:text-slate-400">79991234567</td>
-                      <td className="p-3 font-sans text-slate-700 dark:text-slate-300">Номер телефона клиента (мгновенно открывает диалог)</td>
+                      <td className="p-3 text-slate-600 dark:text-slate-300 dark:text-slate-400">79991234567</td>
+                      <td className="p-3 font-sans text-slate-700 dark:text-slate-200 dark:text-slate-300">Номер телефона клиента (мгновенно открывает диалог)</td>
                     </tr>
                     <tr>
                       <td className="p-3 font-bold text-[#471AFF] dark:text-indigo-300">name</td>
-                      <td className="p-3 text-slate-600 dark:text-slate-400">Алексей Смирнов</td>
-                      <td className="p-3 font-sans text-slate-700 dark:text-slate-300">Имя контакта для сохранения в записную книжку</td>
+                      <td className="p-3 text-slate-600 dark:text-slate-300 dark:text-slate-400">Алексей Смирнов</td>
+                      <td className="p-3 font-sans text-slate-700 dark:text-slate-200 dark:text-slate-300">Имя контакта для сохранения в записную книжку</td>
                     </tr>
                     <tr>
                       <td className="p-3 font-bold text-[#471AFF] dark:text-indigo-300">text</td>
-                      <td className="p-3 text-slate-600 dark:text-slate-400">Заказ 104 подтверждён</td>
-                      <td className="p-3 font-sans text-slate-700 dark:text-slate-300">Предзаполнение поля ввода сообщения</td>
+                      <td className="p-3 text-slate-600 dark:text-slate-300 dark:text-slate-400">Заказ 104 подтверждён</td>
+                      <td className="p-3 font-sans text-slate-700 dark:text-slate-200 dark:text-slate-300">Предзаполнение поля ввода сообщения</td>
                     </tr>
                     <tr>
                       <td className="p-3 font-bold text-[#471AFF] dark:text-indigo-300">embedded</td>
-                      <td className="p-3 text-slate-600 dark:text-slate-400">true</td>
-                      <td className="p-3 font-sans text-slate-700 dark:text-slate-300">Режим компактного виджета для iframe</td>
+                      <td className="p-3 text-slate-600 dark:text-slate-300 dark:text-slate-400">true</td>
+                      <td className="p-3 font-sans text-slate-700 dark:text-slate-200 dark:text-slate-300">Режим компактного виджета для iframe</td>
                     </tr>
                     <tr>
                       <td className="p-3 font-bold text-[#471AFF] dark:text-indigo-300">apiUrl</td>
-                      <td className="p-3 text-slate-600 dark:text-slate-400">https://api.green-api.com</td>
-                      <td className="p-3 font-sans text-slate-700 dark:text-slate-300">Кастомный хост шлюза (опционально)</td>
+                      <td className="p-3 text-slate-600 dark:text-slate-300 dark:text-slate-400">https://api.green-api.com</td>
+                      <td className="p-3 font-sans text-slate-700 dark:text-slate-200 dark:text-slate-300">Кастомный хост шлюза (опционально)</td>
                     </tr>
                   </tbody>
                 </table>
@@ -417,12 +417,12 @@ maxIframe.postMessage({
                 <button
                   type="button"
                   onClick={() => copyToClipboard(postMessageSampleCode, 'postmessage')}
-                  className="flex items-center gap-1 text-xs text-[#471AFF] hover:underline font-semibold cursor-pointer shrink-0"
+                  className="flex items-center gap-1 text-xs text-[#471AFF] dark:text-indigo-300 hover:underline font-semibold cursor-pointer shrink-0"
                 >
                   {copiedKey === 'postmessage' ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      <span className="text-emerald-600">{lang === 'ru' ? 'Скопировано!' : 'Copied!'}</span>
+                      <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span className="text-emerald-600 dark:text-emerald-400">{lang === 'ru' ? 'Скопировано!' : 'Copied!'}</span>
                     </>
                   ) : (
                     <>
@@ -441,7 +441,7 @@ maxIframe.postMessage({
 
           {/* TAB 4: REST API */}
           {activeTab === 'api' && (
-            <div className="space-y-4 text-xs text-slate-700 dark:text-slate-300">
+            <div className="space-y-4 text-xs text-slate-700 dark:text-slate-200 dark:text-slate-300">
               <div className="p-4 bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800 rounded-xl space-y-2">
                 <div className="font-bold text-[#471AFF] dark:text-indigo-300 flex items-center gap-1.5">
                   <Globe className="w-4 h-4" />
@@ -450,7 +450,7 @@ maxIframe.postMessage({
                 <p className="leading-relaxed">
                   Все вызовы выполняются напрямую через защищённый HTTPS шлюз. В приложении используются нативные методы:
                 </p>
-                <ul className="list-disc pl-4 space-y-1 text-slate-800 dark:text-slate-200 font-mono">
+                <ul className="list-disc pl-4 space-y-1 text-slate-800 dark:text-slate-100 dark:text-slate-200 font-mono">
                   <li><code>GET /getContacts</code> — получение записной книжки пользователя</li>
                   <li><code>POST /getContactInfo</code> — детальные сведения и аватар контакта</li>
                   <li><code>POST /sendMessage</code> — отправка сообщений (chatId: "79991234567")</li>
@@ -460,7 +460,7 @@ maxIframe.postMessage({
               </div>
 
               <div className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700">
-                <span className="font-medium text-slate-800 dark:text-slate-200">Официальная документация шлюза:</span>
+                <span className="font-medium text-slate-800 dark:text-slate-100 dark:text-slate-200">Официальная документация шлюза:</span>
                 <a
                   href="https://green-api.com/docs/"
                   target="_blank"
@@ -478,7 +478,7 @@ maxIframe.postMessage({
         {/* Footer */}
         <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 shrink-0">
           <div className="flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>
               {lang === 'ru'
                 ? 'Готово к интеграции в Битрикс24, amoCRM, 1C и любые веб-сайты'
