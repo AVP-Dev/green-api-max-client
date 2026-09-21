@@ -497,10 +497,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <SettingsIcon className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm sm:text-base font-bold text-slate-800 leading-tight">
+              <h2 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 leading-tight">
                 {t.settingsTitle}
               </h2>
-              <p className="text-[11px] text-slate-500 mt-0.5 hidden sm:block">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 hidden sm:block">
                 {t.settingsSubtitle}
               </p>
             </div>
@@ -509,7 +509,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             id="close-settings-button"
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-200/60 transition-colors cursor-pointer"
             title={t.closeBtn}
           >
             <X className="w-5 h-5" />
@@ -519,7 +519,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         {/* Modal Body: Tabs and Content */}
         <div className="flex flex-col sm:flex-row flex-1 min-h-0 overflow-hidden">
           {/* Navigation Tabs */}
-          <div className="w-full sm:w-52 bg-slate-50/70 border-b sm:border-b-0 sm:border-r border-slate-100 p-2 sm:p-3 flex sm:flex-col gap-1 overflow-x-auto sm:overflow-y-auto shrink-0">
+          <div className="w-full sm:w-52 bg-slate-50/70 border-b sm:border-b-0 sm:border-r border-slate-100 dark:border-slate-800 p-2 sm:p-3 flex sm:flex-col gap-1 overflow-x-auto sm:overflow-y-auto shrink-0">
             {/* 1. Interface & Language */}
             <button
               id="tab-chat-button"
@@ -528,7 +528,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               className={`flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-left transition-all shrink-0 sm:shrink cursor-pointer ${
                 activeTab === 'chat'
                   ? 'max-gradient-primary text-white shadow-xs'
-                  : 'text-slate-600 hover:bg-slate-100'
+                  : 'text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <Globe className="w-4 h-4 shrink-0" />
@@ -543,7 +543,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               className={`flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-left transition-all shrink-0 sm:shrink cursor-pointer ${
                 activeTab === 'notifications'
                   ? 'max-gradient-primary text-white shadow-xs'
-                  : 'text-slate-600 hover:bg-slate-100'
+                  : 'text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <Bell className="w-4 h-4 shrink-0" />
@@ -558,7 +558,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               className={`flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-left transition-all shrink-0 sm:shrink cursor-pointer ${
                 activeTab === 'connection'
                   ? 'max-gradient-primary text-white shadow-xs'
-                  : 'text-slate-600 hover:bg-slate-100'
+                  : 'text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <Wifi className="w-4 h-4 shrink-0" />
@@ -573,7 +573,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               className={`flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-left transition-all shrink-0 sm:shrink cursor-pointer ${
                 activeTab === 'integration'
                   ? 'max-gradient-primary text-white shadow-xs'
-                  : 'text-slate-600 hover:bg-slate-100'
+                  : 'text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <Code2 className="w-4 h-4 shrink-0" />
@@ -590,7 +590,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               className={`flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-left transition-all shrink-0 sm:shrink cursor-pointer ${
                 activeTab === 'data'
                   ? 'max-gradient-primary text-white shadow-xs'
-                  : 'text-slate-600 hover:bg-slate-100'
+                  : 'text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <Database className="w-4 h-4 shrink-0" />
@@ -599,19 +599,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           {/* Active Tab Panel */}
-          <div className="flex-1 min-h-0 p-4 sm:p-5 overflow-y-auto bg-white space-y-5">
+          <div className="flex-1 min-h-0 p-4 sm:p-5 overflow-y-auto bg-white dark:bg-slate-900 space-y-5">
             {/* 1. Interface & Language */}
             {activeTab === 'chat' && (
               <div className="space-y-5">
                 {/* Language Switcher Section */}
-                <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80">
+                <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 dark:border-slate-700">
                   <div className="flex items-center gap-2 mb-1">
-                    <Globe className="w-4 h-4 text-[#471AFF]" />
-                    <label className="text-xs font-bold text-slate-800">
+                    <Globe className="w-4 h-4 text-[#471AFF] dark:text-indigo-300" />
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-100">
                       {t.interfaceLanguage}
                     </label>
                   </div>
-                  <p className="text-[11px] text-slate-500 mb-3">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3">
                     {t.interfaceLanguageDesc}
                   </p>
 
@@ -624,15 +624,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       }}
                       className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                         lang === 'ru'
-                          ? 'border-[#471AFF] bg-indigo-50/80 text-[#471AFF] shadow-xs'
-                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100/70'
+                          ? 'border-[#471AFF] bg-indigo-50/80 text-[#471AFF] dark:text-indigo-300 shadow-xs'
+                          : 'border-slate-200 bg-white text-slate-700 dark:text-slate-200 hover:bg-slate-100/70 dark:hover:bg-slate-800 dark:hover:bg-slate-800'
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         <span className="text-base">🇷🇺</span>
                         <span>Русский</span>
                       </div>
-                      {lang === 'ru' && <Check className="w-4 h-4 text-[#471AFF]" />}
+                      {lang === 'ru' && <Check className="w-4 h-4 text-[#471AFF] dark:text-indigo-300" />}
                     </button>
 
                     <button
@@ -643,26 +643,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       }}
                       className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                         lang === 'en'
-                          ? 'border-[#471AFF] bg-indigo-50/80 text-[#471AFF] shadow-xs'
-                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100/70'
+                          ? 'border-[#471AFF] bg-indigo-50/80 text-[#471AFF] dark:text-indigo-300 shadow-xs'
+                          : 'border-slate-200 bg-white text-slate-700 dark:text-slate-200 hover:bg-slate-100/70 dark:hover:bg-slate-800 dark:hover:bg-slate-800'
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         <span className="text-base">🇬🇧</span>
                         <span>English</span>
                       </div>
-                      {lang === 'en' && <Check className="w-4 h-4 text-[#471AFF]" />}
+                      {lang === 'en' && <Check className="w-4 h-4 text-[#471AFF] dark:text-indigo-300" />}
                     </button>
                   </div>
                 </div>
 
                 {/* Send shortcut */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">
                     {t.sendShortcutLabel}
                   </label>
                   <div className="space-y-2 mt-2">
-                    <label className="flex items-center space-x-2.5 cursor-pointer p-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
+                    <label className="flex items-center space-x-2.5 cursor-pointer p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 transition-colors">
                       <input
                         type="radio"
                         name="sendShortcut"
@@ -670,12 +670,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         onChange={() => onUpdateSettings({ ...settings, sendShortcut: 'enter' })}
                         className="text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-xs text-slate-700 font-medium">
+                      <span className="text-xs text-slate-700 dark:text-slate-200 font-medium">
                         {t.sendShortcutEnter}
                       </span>
                     </label>
 
-                    <label className="flex items-center space-x-2.5 cursor-pointer p-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
+                    <label className="flex items-center space-x-2.5 cursor-pointer p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 transition-colors">
                       <input
                         type="radio"
                         name="sendShortcut"
@@ -683,7 +683,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         onChange={() => onUpdateSettings({ ...settings, sendShortcut: 'ctrl_enter' })}
                         className="text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-xs text-slate-700 font-medium">
+                      <span className="text-xs text-slate-700 dark:text-slate-200 font-medium">
                         {t.sendShortcutCtrlEnter}
                       </span>
                     </label>
@@ -691,8 +691,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 {/* Font Size */}
-                <div className="pt-3 border-t border-slate-100">
-                  <label className="block text-xs font-semibold text-slate-700 mb-2">
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2">
                     {t.fontSizeLabel}
                   </label>
                   <div className="grid grid-cols-3 gap-2">
@@ -704,8 +704,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         onClick={() => onUpdateSettings({ ...settings, fontSize: size })}
                         className={`px-3 py-2 rounded-xl text-xs font-semibold border text-center transition-all cursor-pointer ${
                           settings.fontSize === size
-                            ? 'border-[#471AFF] bg-indigo-50/70 text-[#471AFF] shadow-xs'
-                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                            ? 'border-[#471AFF] bg-indigo-50/70 text-[#471AFF] dark:text-indigo-300 shadow-xs'
+                            : 'border-slate-200 bg-white text-slate-700 dark:text-slate-200 hover:bg-slate-50'
                         }`}
                       >
                         {size === 'small' ? t.fontSizeSmall : size === 'medium' ? t.fontSizeMedium : t.fontSizeLarge}
@@ -715,13 +715,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 {/* Phone formatting */}
-                <div className="pt-3 border-t border-slate-100">
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
                   <label className="flex items-start justify-between cursor-pointer">
                     <div className="pr-4">
-                      <span className="text-xs font-semibold text-slate-700 block">
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 block">
                         {t.showPhoneFormattingLabel}
                       </span>
-                      <span className="text-xs text-slate-500 block mt-0.5">
+                      <span className="text-xs text-slate-500 dark:text-slate-400 block mt-0.5">
                         {t.showPhoneFormattingDesc}
                       </span>
                     </div>
@@ -735,8 +735,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 {/* Theme */}
-                <div className="pt-3 border-t border-slate-100">
-                  <label className="block text-xs font-semibold text-slate-700 mb-2">
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2">
                     {lang === 'ru' ? 'Тема оформления' : 'Appearance'}
                   </label>
                   <div className="grid grid-cols-3 gap-2">
@@ -754,8 +754,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         onClick={() => onUpdateSettings({ ...settings, theme: opt.v })}
                         className={`px-3 py-2 rounded-xl text-xs font-semibold border text-center transition-all cursor-pointer ${
                           settings.theme === opt.v
-                            ? 'border-[#471AFF] bg-indigo-50/70 text-[#471AFF] shadow-xs'
-                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                            ? 'border-[#471AFF] bg-indigo-50/70 text-[#471AFF] dark:text-indigo-300 shadow-xs'
+                            : 'border-slate-200 bg-white text-slate-700 dark:text-slate-200 hover:bg-slate-50'
                         }`}
                       >
                         {opt.label}
@@ -766,24 +766,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 {/* Quick Replies / Templates section */}
                 {onOpenQuickReplies && (
-                  <div className="pt-3 border-t border-slate-100">
-                    <div className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-indigo-50/50 border border-indigo-100/80">
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-100/80 dark:border-indigo-800">
                       <div className="flex items-start gap-3 min-w-0">
-                        <div className="w-8 h-8 rounded-xl bg-indigo-100 text-[#471AFF] flex items-center justify-center shrink-0 mt-0.5">
+                        <div className="w-8 h-8 rounded-xl bg-indigo-100 text-[#471AFF] dark:text-indigo-300 flex items-center justify-center shrink-0 mt-0.5">
                           <Zap className="w-4 h-4 fill-[#471AFF]/20" />
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-slate-800">
+                            <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
                               {t.quickRepliesTitle}
                             </span>
                             {typeof quickRepliesCount === 'number' && (
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-white text-[#471AFF] font-bold border border-indigo-200">
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-white text-[#471AFF] dark:text-indigo-300 font-bold border border-indigo-200">
                                 {quickRepliesCount}
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] text-slate-500 mt-0.5 truncate sm:whitespace-normal">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate sm:whitespace-normal">
                             {t.quickRepliesSubtitle}
                           </p>
                         </div>
@@ -808,14 +808,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             {activeTab === 'notifications' && (
               <div className="space-y-6">
                 {/* Sound Alerts */}
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3.5">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 dark:border-slate-700 space-y-3.5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1 pr-2">
-                      <span className="text-xs font-bold text-slate-800 block break-words flex items-center gap-1.5">
-                        <Volume2 className="w-4 h-4 text-[#471AFF]" />
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-100 block break-words flex items-center gap-1.5">
+                        <Volume2 className="w-4 h-4 text-[#471AFF] dark:text-indigo-300" />
                         <span>{t.soundNotificationsLabel}</span>
                       </span>
-                      <span className="text-xs text-slate-500 block mt-1 break-words">
+                      <span className="text-xs text-slate-500 dark:text-slate-400 block mt-1 break-words">
                         {t.soundNotificationsDesc}
                       </span>
                     </div>
@@ -827,8 +827,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     />
                   </div>
 
-                  <div className="pt-3 border-t border-slate-200 flex items-center justify-between gap-3">
-                    <span className="text-xs text-slate-600">
+                  <div className="pt-3 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
+                    <span className="text-xs text-slate-600 dark:text-slate-300">
                       {isRu ? 'Проверка воспроизведения звука' : 'Test sound playback'}
                     </span>
                     <button
@@ -838,7 +838,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
                         isPlayingSound
                           ? 'bg-[#471AFF] text-white shadow-xs'
-                          : 'bg-white text-[#471AFF] hover:bg-indigo-50 border border-indigo-200 shadow-2xs'
+                          : 'bg-white text-[#471AFF] dark:text-indigo-300 hover:bg-indigo-50 border border-indigo-200 shadow-2xs'
                       }`}
                     >
                       <Volume2 className={`w-3.5 h-3.5 ${isPlayingSound ? 'animate-bounce' : ''}`} />
@@ -848,38 +848,38 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 {/* Notification channels: smart single-channel routing, no duplication */}
-                <div className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100/90 space-y-4">
+                <div className="p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-100/90 dark:border-indigo-800 space-y-4">
                   <div>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5">
-                        <Bell className="w-4 h-4 text-[#471AFF]" />
-                        <h4 className="text-xs font-bold text-slate-800">
+                        <Bell className="w-4 h-4 text-[#471AFF] dark:text-indigo-300" />
+                        <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100">
                           {isRu ? 'Каналы уведомлений — без задвоения' : 'Notification channels — no duplication'}
                         </h4>
                       </div>
 
                       {/* Permission status badge */}
                       {browserPermission === 'granted' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                          <Check className="w-3 h-3 text-emerald-600" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:text-emerald-200 border border-emerald-200">
+                          <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                           <span>{isRu ? 'Разрешены' : 'Granted'}</span>
                         </span>
                       )}
                       {browserPermission === 'default' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                          <AlertTriangle className="w-3 h-3 text-amber-600" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:text-amber-200 border border-amber-200">
+                          <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                           <span>{isRu ? 'Требуется разрешение' : 'Permission needed'}</span>
                         </span>
                       )}
                       {browserPermission === 'denied' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
-                          <X className="w-3 h-3 text-rose-600" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 dark:text-rose-200 border border-rose-200">
+                          <X className="w-3 h-3 text-rose-600 dark:text-rose-400" />
                           <span>{isRu ? 'Заблокированы' : 'Blocked'}</span>
                         </span>
                       )}
                     </div>
 
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                       {isRu
                         ? 'Работает только один канал за раз: красивая карточка внутри вкладки — когда вы смотрите на неё, системное уведомление браузера — когда вкладка свёрнута или свернуто окно. Плюс всегда горят счётчик на иконке вкладки и мигание заголовка.'
                         : 'Only one channel fires at a time: a beautiful in-app card while you are looking at the tab, a system browser notification while the tab is minimized or in the background. The tab icon badge and flashing title always stay on.'}
@@ -888,12 +888,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                   {/* Channel toggles */}
                   <div className="space-y-2">
-                    <label className="flex items-start justify-between gap-3 p-3 rounded-xl bg-white border border-slate-200 cursor-pointer hover:border-indigo-200 transition-colors">
+                    <label className="flex items-start justify-between gap-3 p-3 rounded-xl bg-white border border-slate-200 dark:border-slate-700 cursor-pointer hover:border-indigo-200 transition-colors">
                       <div className="min-w-0">
-                        <span className="text-xs font-bold text-slate-800 block">
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-100 block">
                           {isRu ? 'Системные уведомления браузера' : 'System browser notifications'}
                         </span>
-                        <span className="text-[11px] text-slate-500 block mt-0.5">
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
                           {isRu
                             ? 'Приходят от ОС, когда вкладка неактивна. Требуют разрешения ниже.'
                             : 'Delivered by the OS when the tab is inactive. Requires permission below.'}
@@ -903,16 +903,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         type="checkbox"
                         checked={settings.browserNotificationsEnabled !== false}
                         onChange={(e) => onUpdateSettings({ ...settings, browserNotificationsEnabled: e.target.checked })}
-                        className="mt-0.5 rounded text-[#471AFF] focus:ring-[#471AFF]/30 w-4 h-4 cursor-pointer shrink-0"
+                        className="mt-0.5 rounded text-[#471AFF] dark:text-indigo-300 focus:ring-[#471AFF]/30 w-4 h-4 cursor-pointer shrink-0"
                       />
                     </label>
 
-                    <label className="flex items-start justify-between gap-3 p-3 rounded-xl bg-white border border-slate-200 cursor-pointer hover:border-indigo-200 transition-colors">
+                    <label className="flex items-start justify-between gap-3 p-3 rounded-xl bg-white border border-slate-200 dark:border-slate-700 cursor-pointer hover:border-indigo-200 transition-colors">
                       <div className="min-w-0">
-                        <span className="text-xs font-bold text-slate-800 block">
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-100 block">
                           {isRu ? 'Всплывающая карточка внутри вкладки' : 'In-app popup card'}
                         </span>
-                        <span className="text-[11px] text-slate-500 block mt-0.5">
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
                           {isRu
                             ? 'Красивое уведомление в правом верхнем углу, только когда вы в мессенджере.'
                             : 'Beautiful card in the top-right corner, only while you are in the messenger.'}
@@ -922,15 +922,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         type="checkbox"
                         checked={settings.inAppPopupsEnabled !== false}
                         onChange={(e) => onUpdateSettings({ ...settings, inAppPopupsEnabled: e.target.checked })}
-                        className="mt-0.5 rounded text-[#471AFF] focus:ring-[#471AFF]/30 w-4 h-4 cursor-pointer shrink-0"
+                        className="mt-0.5 rounded text-[#471AFF] dark:text-indigo-300 focus:ring-[#471AFF]/30 w-4 h-4 cursor-pointer shrink-0"
                       />
                     </label>
                   </div>
 
                   {/* Permission request action if default */}
                   {browserPermission === 'default' && (
-                    <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white border border-amber-200">
-                      <div className="text-[11px] text-slate-600">
+                    <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-800">
+                      <div className="text-[11px] text-slate-600 dark:text-slate-300">
                         {isRu
                           ? 'Разрешите всплывающие системные уведомления для фоновых оповещений'
                           : 'Allow system notifications for background message alerts'}
@@ -947,7 +947,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                   {/* Tip if denied */}
                   {browserPermission === 'denied' && (
-                    <div className="p-3 rounded-xl bg-rose-50/70 border border-rose-200 text-[11px] text-rose-700 space-y-1">
+                    <div className="p-3 rounded-xl bg-rose-50/70 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-[11px] text-rose-700 dark:text-rose-300 space-y-1">
                       <p className="font-semibold">
                         {isRu ? 'Уведомления заблокированы в браузере' : 'Notifications blocked by browser'}
                       </p>
@@ -961,7 +961,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                   {/* Tip if unsupported */}
                   {browserPermission === 'unsupported' && (
-                    <div className="p-3 rounded-xl bg-slate-100 border border-slate-200 text-[11px] text-slate-600">
+                    <div className="p-3 rounded-xl bg-slate-100 border border-slate-200 dark:border-slate-700 text-[11px] text-slate-600 dark:text-slate-300">
                       {isRu
                         ? 'Этот браузер не поддерживает системные уведомления — будет работать только всплывающая карточка внутри вкладки.'
                         : 'This browser does not support system notifications — only the in-app popup card will work.'}
@@ -970,7 +970,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                   {/* Verification: smart test + forced system test */}
                   <div className="pt-2 border-t border-indigo-100 space-y-2.5">
-                    <div className="text-[11px] text-slate-600">
+                    <div className="text-[11px] text-slate-600 dark:text-slate-300">
                       {isRu
                         ? 'Проверка: первая кнопка показывает то, что придёт прямо сейчас (карточка, т.к. вкладка открыта), вторая — принудительно системное уведомление.'
                         : 'Verification: the first button shows what would arrive right now (the card, since the tab is open); the second forces a system notification.'}
@@ -987,9 +987,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             setTimeout(() => setTestNotifSuccess(false), 4000);
                           }
                         }}
-                        className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white text-[#471AFF] hover:bg-indigo-50 border border-indigo-200 transition-all cursor-pointer shadow-2xs flex items-center gap-1.5 shrink-0"
+                        className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white text-[#471AFF] dark:text-indigo-300 hover:bg-indigo-50 border border-indigo-200 transition-all cursor-pointer shadow-2xs flex items-center gap-1.5 shrink-0"
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-[#471AFF]" />
+                        <Sparkles className="w-3.5 h-3.5 text-[#471AFF] dark:text-indigo-300" />
                         <span>
                           {testNotifSuccess
                             ? (isRu ? 'Уведомление отправлено!' : 'Notification sent!')
@@ -1011,7 +1011,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         type="button"
                         onClick={refreshBrowserPermission}
                         title={isRu ? 'Обновить статус разрешения' : 'Refresh permission status'}
-                        className="px-2.5 py-1.5 rounded-xl text-[11px] font-medium bg-white text-slate-500 hover:text-slate-700 hover:bg-slate-100 border border-slate-200 transition-all cursor-pointer flex items-center gap-1 shrink-0"
+                        className="px-2.5 py-1.5 rounded-xl text-[11px] font-medium bg-white text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer flex items-center gap-1 shrink-0"
                       >
                         <RotateCw className="w-3 h-3" />
                         <span>{isRu ? 'Обновить статус' : 'Refresh status'}</span>
@@ -1019,7 +1019,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
 
                     {testBrowserMsg && (
-                      <div className="p-2.5 rounded-xl text-[11px] bg-white border border-indigo-200 text-slate-700">
+                      <div className="p-2.5 rounded-xl text-[11px] bg-white border border-indigo-200 text-slate-700 dark:text-slate-200">
                         {testBrowserMsg}
                       </div>
                     )}
@@ -1034,22 +1034,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 {/* Editable Instance & Gateway form */}
                 <div className="space-y-3">
                   <div>
-                    <h3 className="text-xs font-bold text-slate-800 break-words flex items-center gap-1.5">
-                      <Server className="w-3.5 h-3.5 text-[#471AFF]" />
+                    <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100 break-words flex items-center gap-1.5">
+                      <Server className="w-3.5 h-3.5 text-[#471AFF] dark:text-indigo-300" />
                       <span>{t.editConnectionTitle}</span>
                     </h3>
-                    <p className="text-[11px] text-slate-500 mt-0.5 break-words">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 break-words">
                       {t.editConnectionDesc}
                     </p>
                   </div>
 
                   {/* ID Instance input */}
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                    <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-200 mb-1">
                       {t.idInstanceLabel}
                     </label>
                     <div className="relative">
-                      <KeyRound className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <KeyRound className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                       <input
                         id="settings-id-instance-input"
                         type="text"
@@ -1059,18 +1059,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           setSaveError(null);
                         }}
                         placeholder="1101823456"
-                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:bg-white focus:border-[#471AFF] focus:ring-1 focus:ring-[#471AFF]/20 focus:outline-none transition-all"
+                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-[#471AFF] focus:ring-1 focus:ring-[#471AFF]/20 focus:outline-none transition-all"
                       />
                     </div>
                   </div>
 
                   {/* API Token Instance input with show/hide toggle */}
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                    <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-200 mb-1">
                       {t.apiTokenLabel}
                     </label>
                     <div className="relative">
-                      <KeyRound className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <KeyRound className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                       <input
                         id="settings-api-token-input"
                         type={showToken ? 'text' : 'password'}
@@ -1080,14 +1080,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           setSaveError(null);
                         }}
                         placeholder={t.apiTokenPlaceholder}
-                        className="w-full pl-9 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:bg-white focus:border-[#471AFF] focus:ring-1 focus:ring-[#471AFF]/20 focus:outline-none transition-all"
+                        className="w-full pl-9 pr-10 py-2 bg-slate-50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-[#471AFF] focus:ring-1 focus:ring-[#471AFF]/20 focus:outline-none transition-all"
                       />
                       <button
                         id="settings-toggle-token-button"
                         type="button"
                         onClick={() => setShowToken(!showToken)}
                         title={t.toggleShowToken}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors cursor-pointer"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 p-1 rounded-md transition-colors cursor-pointer"
                       >
                         {showToken ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                       </button>
@@ -1097,12 +1097,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   {/* Gateway URL input with presets */}
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="block text-[11px] font-semibold text-slate-700">
+                      <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-200">
                         {t.gatewayUrlLabel}
                       </label>
                     </div>
                     <div className="relative">
-                      <Globe className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <Globe className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                       <input
                         id="settings-gateway-url-input"
                         type="text"
@@ -1112,11 +1112,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           setSaveError(null);
                         }}
                         placeholder="https://api.green-api.com"
-                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:bg-white focus:border-[#471AFF] focus:ring-1 focus:ring-[#471AFF]/20 focus:outline-none transition-all"
+                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-[#471AFF] focus:ring-1 focus:ring-[#471AFF]/20 focus:outline-none transition-all"
                       />
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                      <span className="text-[10px] text-slate-400 mr-0.5">
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500 mr-0.5">
                         {isRu ? 'Пресеты шлюза:' : 'Gateway presets:'}
                       </span>
                       <button
@@ -1127,8 +1127,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         }}
                         className={`text-[10px] px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
                           editApiUrl === 'https://api.green-api.com'
-                            ? 'bg-indigo-50 border-[#471AFF]/30 text-[#471AFF] font-medium'
-                            : 'bg-slate-100/80 border-slate-200/80 text-slate-600 hover:bg-slate-200/60'
+                            ? 'bg-indigo-50 border-[#471AFF]/30 text-[#471AFF] dark:text-indigo-300 font-medium'
+                            : 'bg-slate-100/80 border-slate-200/80 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60'
                         }`}
                       >
                         api.green-api.com
@@ -1142,8 +1142,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           }}
                           className={`text-[10px] px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
                             editApiUrl === `https://${editIdInstance.trim().slice(0, 4)}.api.green-api.com`
-                              ? 'bg-indigo-50 border-[#471AFF]/30 text-[#471AFF] font-medium'
-                              : 'bg-slate-100/80 border-slate-200/80 text-slate-600 hover:bg-slate-200/60'
+                              ? 'bg-indigo-50 border-[#471AFF]/30 text-[#471AFF] dark:text-indigo-300 font-medium'
+                              : 'bg-slate-100/80 border-slate-200/80 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60'
                           }`}
                         >
                           {editIdInstance.trim().slice(0, 4)}.api.green-api.com
@@ -1157,15 +1157,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         }}
                         className={`text-[10px] px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
                           editApiUrl === 'https://7103.api.greenapi.com'
-                            ? 'bg-indigo-50 border-[#471AFF]/30 text-[#471AFF] font-medium'
-                            : 'bg-slate-100/80 border-slate-200/80 text-slate-600 hover:bg-slate-200/60'
+                            ? 'bg-indigo-50 border-[#471AFF]/30 text-[#471AFF] dark:text-indigo-300 font-medium'
+                            : 'bg-slate-100/80 border-slate-200/80 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60'
                         }`}
                       >
                         7103.api.greenapi.com
                       </button>
                     </div>
                     {editApiUrl.trim() && !isTrustedGatewayUrl(editApiUrl.trim()) && (
-                      <p className="text-[11px] text-rose-600 leading-relaxed mt-1.5">
+                      <p className="text-[11px] text-rose-600 dark:text-rose-400 leading-relaxed mt-1.5">
                         {isRu
                           ? '⚠️ Домен вне allowlist — разрешены только *.green-api.com и *.greenapi.com (https). HTTP запрещён.'
                           : '⚠️ Domain not allowlisted — only *.green-api.com and *.greenapi.com (https) are allowed. HTTP is forbidden.'}
@@ -1184,7 +1184,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           ? 'bg-emerald-600 text-white'
                           : hasCredsChanges
                           ? 'max-gradient-primary text-white hover:opacity-95'
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                          : 'bg-slate-100 text-slate-700 dark:text-slate-200 hover:bg-slate-200'
                       }`}
                     >
                       {isSavedRecently ? (
@@ -1205,7 +1205,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       type="button"
                       onClick={handleDiagnosticCheck}
                       disabled={checkingStatus || !editIdInstance.trim() || !editApiToken.trim()}
-                      className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors disabled:opacity-50 cursor-pointer"
+                      className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-200 transition-colors disabled:opacity-50 cursor-pointer"
                     >
                       <RotateCw className={`w-3.5 h-3.5 ${checkingStatus ? 'animate-spin' : ''}`} />
                       <span>{checkingStatus ? t.checkingStatus : t.checkStatusBtn}</span>
@@ -1213,7 +1213,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </div>
 
                   {saveError && (
-                    <div className="p-2.5 rounded-xl text-xs bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-2">
+                    <div className="p-2.5 rounded-xl text-xs bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 flex items-center gap-2">
                       <span className="break-words">{saveError}</span>
                     </div>
                   )}
@@ -1221,10 +1221,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   {statusResult && (
                     <div className={`p-2.5 rounded-xl text-xs flex items-center space-x-2 ${
                       statusState === 'success' 
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        ? 'bg-emerald-50 text-emerald-700 dark:text-emerald-300 border border-emerald-200'
                         : statusState === 'error'
-                        ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                        ? 'bg-rose-50 text-rose-700 dark:text-rose-300 border border-rose-200'
+                        : 'bg-amber-50 text-amber-700 dark:text-amber-300 border border-amber-200'
                     }`}>
                       <div className={`w-2 h-2 rounded-full shrink-0 ${
                         statusState === 'success' ? 'bg-emerald-500' : statusState === 'error' ? 'bg-rose-500' : 'bg-amber-500'
@@ -1235,53 +1235,53 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                   {/* Deep Diagnostics & Troubleshooting Panel */}
                   {diagnosticData && (
-                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5 text-xs text-slate-700 animate-in fade-in duration-200">
-                      <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/80">
-                        <div className="flex items-center gap-1.5 font-bold text-slate-800">
-                          <Activity className="w-3.5 h-3.5 text-[#471AFF]" />
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 dark:border-slate-700 space-y-2.5 text-xs text-slate-700 dark:text-slate-200 animate-in fade-in duration-200">
+                      <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/80 dark:border-slate-700">
+                        <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-100">
+                          <Activity className="w-3.5 h-3.5 text-[#471AFF] dark:text-indigo-300" />
                           <span>{isRu ? 'Диагностика инстанса и очереди' : 'Instance & Queue Diagnostics'}</span>
                         </div>
-                        <span className="text-[10px] font-mono text-slate-500">
+                        <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
                           {diagnosticData.stateInstance || 'unknown'}
                         </span>
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 text-[11px]">
-                        <div className="bg-white p-2 rounded-lg border border-slate-100">
+                        <div className="bg-white p-2 rounded-lg border border-slate-100 dark:border-slate-800">
                           <span className="text-slate-400 block text-[10px]">{isRu ? 'Очередь уведомлений:' : 'Notification Queue:'}</span>
-                          <span className="font-semibold text-slate-800">
+                          <span className="font-semibold text-slate-800 dark:text-slate-100">
                             {diagnosticData.countWebhooks !== undefined ? `${diagnosticData.countWebhooks} сообщ.` : (isRu ? 'недоступно' : 'n/a')}
                           </span>
                         </div>
-                        <div className="bg-white p-2 rounded-lg border border-slate-100">
+                        <div className="bg-white p-2 rounded-lg border border-slate-100 dark:border-slate-800">
                           <span className="text-slate-400 block text-[10px]">{isRu ? 'Тест опроса (Receive):' : 'Polling Test (Receive):'}</span>
-                          <span className={`font-semibold ${diagnosticData.testPollSuccess ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          <span className={`font-semibold ${diagnosticData.testPollSuccess ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                             {diagnosticData.testPollSuccess ? (isRu ? 'Работает' : 'Success') : (isRu ? 'Сбой' : 'Failed')}
                           </span>
                         </div>
                       </div>
 
                       {/* Webhook Configuration Inspection */}
-                      <div className="bg-white p-2 rounded-lg border border-slate-100 text-[11px] space-y-1">
+                      <div className="bg-white p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-[11px] space-y-1">
                         <div className="flex items-center justify-between">
                           <span className="text-slate-500">{isRu ? 'Входящие вебхуки (incomingWebhook):' : 'Incoming Webhook:'}</span>
-                          <span className={`font-mono font-medium ${diagnosticData.incomingWebhook === 'yes' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                          <span className={`font-mono font-medium ${diagnosticData.incomingWebhook === 'yes' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
                             {diagnosticData.incomingWebhook || 'no'}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-slate-500">{isRu ? 'Исходящие вебхуки (outgoingWebhook):' : 'Outgoing Webhook:'}</span>
-                          <span className={`font-mono font-medium ${diagnosticData.outgoingMessageWebhook === 'yes' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                          <span className={`font-mono font-medium ${diagnosticData.outgoingMessageWebhook === 'yes' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
                             {diagnosticData.outgoingMessageWebhook || 'no'}
                           </span>
                         </div>
                         {diagnosticData.webhookUrl && (
-                          <div className="mt-1.5 p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[10px] flex items-start gap-1.5">
-                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                          <div className="mt-1.5 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-[10px] flex items-start gap-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                             <div>
                               <span className="font-semibold">{isRu ? 'Внимание: указан внешний Webhook URL: ' : 'Warning: External Webhook URL set: '}</span>
                               <span className="font-mono break-words [overflow-wrap:anywhere]">{diagnosticData.webhookUrl}</span>
-                              <p className="mt-0.5 text-amber-700">
+                              <p className="mt-0.5 text-amber-700 dark:text-amber-300">
                                 {isRu 
                                   ? 'GREEN-API отправляет вебхуки на внешний сервер, поэтому они не попадают в веб-очередь. Нажмите «Оптимизировать для MAX Web», чтобы перенаправить их в веб-интерфейс.'
                                   : 'GREEN-API is redirecting webhooks to an external server. Click Optimize for MAX Web to route them to the web queue.'}
@@ -1292,7 +1292,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       </div>
 
                       {/* Polling diagnostic detail */}
-                      <div className="text-[10px] text-slate-500 bg-slate-100/80 p-1.5 rounded-lg font-mono break-words [overflow-wrap:anywhere]">
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-100/80 p-1.5 rounded-lg font-mono break-words [overflow-wrap:anywhere]">
                         {diagnosticData.testPollMessage}
                       </div>
 
@@ -1303,7 +1303,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             type="button"
                             onClick={() => onSyncMessages()}
                             disabled={isSyncingMessages}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-indigo-50 border border-[#471AFF]/30 text-[#471AFF] hover:bg-indigo-100 text-[11px] font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-indigo-50 border border-[#471AFF]/30 text-[#471AFF] dark:text-indigo-300 hover:bg-indigo-100 text-[11px] font-semibold transition-colors cursor-pointer disabled:opacity-50"
                           >
                             <RotateCw className={`w-3 h-3 ${isSyncingMessages ? 'animate-spin' : ''}`} />
                             <span>{isSyncingMessages ? (isRu ? 'Синхронизация...' : 'Syncing...') : (isRu ? 'Синхронизировать сообщения (24ч)' : 'Sync Messages (24h)')}</span>
@@ -1314,7 +1314,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           type="button"
                           onClick={handleFixInstanceSettings}
                           disabled={isFixingSettings}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 hover:bg-slate-200 text-[11px] font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 text-[11px] font-semibold transition-colors cursor-pointer disabled:opacity-50"
                         >
                           <Wrench className={`w-3 h-3 ${isFixingSettings ? 'animate-spin' : ''}`} />
                           <span>{isFixingSettings ? (isRu ? 'Настройка...' : 'Configuring...') : (isRu ? 'Оптимизировать для MAX Web' : 'Optimize for MAX Web')}</span>
@@ -1325,7 +1325,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             type="button"
                             onClick={handleClearQueue}
                             disabled={isClearingQueue}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium transition-colors cursor-pointer disabled:opacity-50"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-[11px] font-medium transition-colors cursor-pointer disabled:opacity-50"
                           >
                             <Trash2 className="w-3 h-3" />
                             <span>{isClearingQueue ? (isRu ? 'Очистка...' : 'Clearing...') : (isRu ? 'Очистить очередь' : 'Clear Queue')}</span>
@@ -1334,7 +1334,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       </div>
 
                       {fixSettingsMessage && (
-                        <div className="p-2 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px]">
+                        <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[11px]">
                           {fixSettingsMessage}
                         </div>
                       )}
@@ -1343,11 +1343,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 {/* Polling Interval Setting */}
-                <div className="pt-3 border-t border-slate-100">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1 break-words">
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1 break-words">
                     {t.pollingIntervalLabel}
                   </label>
-                  <p className="text-[11px] text-slate-500 mb-2.5 break-words">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2.5 break-words">
                     {t.pollingIntervalHint}
                   </p>
                   <div className="grid grid-cols-3 gap-2">
@@ -1363,8 +1363,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         onClick={() => onUpdateSettings({ ...settings, pollingIntervalMs: opt.ms })}
                         className={`px-2 py-2 rounded-xl text-xs font-semibold border text-center transition-all cursor-pointer truncate ${
                           settings.pollingIntervalMs === opt.ms
-                            ? 'border-[#471AFF] bg-indigo-50/70 text-[#471AFF] shadow-xs'
-                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                            ? 'border-[#471AFF] bg-indigo-50/70 text-[#471AFF] dark:text-indigo-300 shadow-xs'
+                            : 'border-slate-200 bg-white text-slate-700 dark:text-slate-200 hover:bg-slate-50'
                         }`}
                         title={opt.label}
                       >
@@ -1375,13 +1375,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 {/* Background journal sync toggle */}
-                <div className="pt-3 border-t border-slate-100">
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
                   <label className="flex items-start justify-between cursor-pointer">
                     <div className="pr-4">
-                      <span className="text-xs font-semibold text-slate-700 block">
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 block">
                         {lang === 'ru' ? 'Фоновая сверка журнала' : 'Background journal sync'}
                       </span>
-                      <span className="text-xs text-slate-500 block mt-0.5">
+                      <span className="text-xs text-slate-500 dark:text-slate-400 block mt-0.5">
                         {lang === 'ru'
                           ? 'Добирает пропущенное через lastIncoming/lastOutgoing (3 запроса за тик). Выкл — только long-poll очереди, минимум трафика.'
                           : 'Backfills missed messages via lastIncoming/lastOutgoing (3 req/tick). Off — queue long-poll only, minimal traffic.'}
@@ -1399,13 +1399,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 {/* BFF proxy mode */}
-                <div className="pt-3 border-t border-slate-100">
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
                   <label className="flex items-start justify-between cursor-pointer">
                     <div className="pr-4">
-                      <span className="text-xs font-semibold text-slate-700 block">
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 block">
                         {lang === 'ru' ? 'BFF-прокси (без токена в браузере)' : 'BFF proxy (no token in browser)'}
                       </span>
-                      <span className="text-xs text-slate-500 block mt-0.5">
+                      <span className="text-xs text-slate-500 dark:text-slate-400 block mt-0.5">
                         {isBffConfigured()
                           ? lang === 'ru'
                             ? `Отправка и опрос через ${BFF_URL}. Токен хранится в vault на сервере (см. bff/README.md).`
@@ -1431,22 +1431,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             {activeTab === 'data' && (
               <div className="space-y-5">
                 <div>
-                  <h3 className="text-xs font-bold text-slate-800 break-words">
+                  <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100 break-words">
                     {t.accountSectionTitle}
                   </h3>
-                  <p className="text-[11px] text-slate-500 mt-0.5 break-words">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 break-words">
                     {t.accountSectionDesc}
                   </p>
                 </div>
 
                 {/* Credential storage: session vs persistent */}
                 {onUpdateCredsPersistence && (
-                  <label className="flex items-start justify-between gap-3 p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 cursor-pointer select-none">
+                  <label className="flex items-start justify-between gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 cursor-pointer select-none">
                     <div className="min-w-0 flex-1">
-                      <span className="text-xs font-semibold text-slate-700 block break-words">
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 block break-words">
                         {lang === 'ru' ? 'Запомнить на этом устройстве' : 'Remember on this device'}
                       </span>
-                      <span className="text-[11px] text-slate-500 block mt-0.5 break-words">
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5 break-words">
                         {lang === 'ru'
                           ? 'Выкл — ключи только до закрытия вкладки (sessionStorage, безопаснее). Вкл — localStorage: удобно, но при XSS токен прочитает любой скрипт.'
                           : 'Off — keys live until the tab closes (sessionStorage, safer). On — localStorage: convenient, but any script can read the token under XSS.'}
@@ -1463,8 +1463,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 {/* Auto-lock + TTL */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/50">
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">
                       {lang === 'ru' ? 'Авто-выход при простое' : 'Auto-lock on inactivity'}
                     </label>
                     <div className="flex flex-wrap gap-1.5">
@@ -1480,8 +1480,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           onClick={() => onUpdateSettings({ ...settings, autoLockMinutes: opt.m })}
                           className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
                             settings.autoLockMinutes === opt.m
-                              ? 'border-[#471AFF] bg-indigo-50/70 text-[#471AFF]'
-                              : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                              ? 'border-[#471AFF] bg-indigo-50/70 text-[#471AFF] dark:text-indigo-300'
+                              : 'border-slate-200 bg-white text-slate-600 dark:text-slate-300 hover:bg-slate-50'
                           }`}
                         >
                           {opt.label}
@@ -1489,8 +1489,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       ))}
                     </div>
                   </div>
-                  <div className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/50">
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">
                       {lang === 'ru' ? 'Хранить сообщения' : 'Keep messages'}
                     </label>
                     <div className="flex flex-wrap gap-1.5">
@@ -1506,8 +1506,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           onClick={() => onUpdateSettings({ ...settings, messageTtlDays: opt.d })}
                           className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
                             settings.messageTtlDays === opt.d
-                              ? 'border-[#471AFF] bg-indigo-50/70 text-[#471AFF]'
-                              : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                              ? 'border-[#471AFF] bg-indigo-50/70 text-[#471AFF] dark:text-indigo-300'
+                              : 'border-slate-200 bg-white text-slate-600 dark:text-slate-300 hover:bg-slate-50'
                           }`}
                         >
                           {opt.label}
@@ -1518,13 +1518,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 {/* Export Data */}
-                <div className="flex flex-col gap-3 p-3.5 rounded-xl border border-slate-100 bg-slate-50/50">
+                <div className="flex flex-col gap-3 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <span className="text-xs font-semibold text-slate-700 block break-words">
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 block break-words">
                         {t.exportChatsBtn}
                       </span>
-                      <span className="text-[11px] text-slate-500 block mt-0.5 break-words">
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5 break-words">
                         {t.exportChatsDesc} ({dialogs.length} {lang === 'ru' ? 'диалогов' : 'chats'})
                       </span>
                     </div>
@@ -1533,7 +1533,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       type="button"
                       onClick={handleExportData}
                       disabled={backupBusy}
-                      className="inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-xs cursor-pointer shrink-0 self-start sm:self-auto disabled:opacity-50"
+                      className="inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors shadow-xs cursor-pointer shrink-0 self-start sm:self-auto disabled:opacity-50"
                     >
                       <Download className="w-3.5 h-3.5" />
                       <span>{backupPassword ? (lang === 'ru' ? 'Шифр. JSON' : 'Enc. JSON') : 'JSON'}</span>
@@ -1546,14 +1546,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       onChange={(e) => setExportWithMessages(e.target.checked)}
                       className="mt-0.5 w-4 h-4 rounded accent-[#471AFF] cursor-pointer"
                     />
-                    <span className="text-[11px] leading-relaxed text-slate-600">
+                    <span className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
                       {lang === 'ru'
                         ? 'Включить тексты сообщений (по умолчанию выключено — файл с перепиской в открытом виде нельзя пересылать посторонним). Токен доступа никогда не включается в выгрузку.'
                         : 'Include message texts (off by default — a plaintext backup must not be shared with third parties). The access token is never included in the export.'}
                     </span>
                   </label>
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                    <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-200 mb-1">
                       {lang === 'ru' ? 'Пароль шифрования (AES-GCM, опционально)' : 'Encryption password (AES-GCM, optional)'}
                     </label>
                     <input
@@ -1566,9 +1566,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       }}
                       placeholder={lang === 'ru' ? 'Минимум 4 символа — иначе plain JSON' : 'Min 4 chars — else plain JSON'}
                       autoComplete="new-password"
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-[#471AFF] focus:ring-1 focus:ring-[#471AFF]/20"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#471AFF] focus:ring-1 focus:ring-[#471AFF]/20"
                     />
-                    <p className="text-[10px] text-slate-400 mt-1">
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
                       {lang === 'ru'
                         ? 'Тот же пароль используется для расшифровки при импорте. Без пароля — обычный JSON.'
                         : 'The same password decrypts on import. No password — plain JSON.'}
@@ -1578,7 +1578,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <div className="flex items-center gap-2">
                       <label
                         htmlFor="import-backup-file"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-xs cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors shadow-xs cursor-pointer"
                       >
                         <Download className="w-3.5 h-3.5 rotate-180" />
                         <span>{lang === 'ru' ? 'Импорт бэкапа' : 'Import backup'}</span>
@@ -1595,26 +1595,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         }}
                       />
                       {backupBusy && (
-                        <span className="text-[11px] text-slate-500">
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400">
                           {lang === 'ru' ? 'Обработка…' : 'Working…'}
                         </span>
                       )}
                     </div>
                   )}
                   {backupError && (
-                    <div className="p-2.5 rounded-xl text-[11px] bg-rose-50 text-rose-700 border border-rose-200 break-words">
+                    <div className="p-2.5 rounded-xl text-[11px] bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 break-words">
                       {backupError}
                     </div>
                   )}
                 </div>
 
                 {/* Clear local chat history */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-rose-100 bg-rose-50/30">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-rose-100 dark:border-rose-900 bg-rose-50/30 dark:bg-rose-950/20">
                   <div className="min-w-0 flex-1">
-                    <span className="text-xs font-semibold text-rose-700 block break-words">
+                    <span className="text-xs font-semibold text-rose-700 dark:text-rose-300 block break-words">
                       {t.clearAllDataBtn}
                     </span>
-                    <span className="text-[11px] text-slate-500 block mt-0.5 break-words">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5 break-words">
                       {t.clearAllDataDesc}
                     </span>
                   </div>
@@ -1623,7 +1623,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       <button
                         type="button"
                         onClick={() => setConfirmClearAll(false)}
-                        className="px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                        className="px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                       >
                         {t.cancel}
                       </button>
@@ -1645,7 +1645,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       id="clear-all-chats-button"
                       type="button"
                       onClick={() => setConfirmClearAll(true)}
-                      className="inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-rose-600 bg-white hover:bg-rose-50 border border-rose-200 transition-colors shadow-xs cursor-pointer shrink-0 self-start sm:self-auto"
+                      className="inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-rose-600 dark:text-rose-400 bg-white hover:bg-rose-50 border border-rose-200 transition-colors shadow-xs cursor-pointer shrink-0 self-start sm:self-auto"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>{t.clearHistory}</span>
@@ -1654,15 +1654,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 {/* Sign Out Card (Dedicated, clear, prominent) */}
-                <div className="pt-2 border-t border-slate-100">
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                   <div className="p-4 rounded-2xl bg-gradient-to-r from-rose-50/80 to-pink-50/50 border border-rose-200/70">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <h4 className="text-xs font-bold text-rose-900 flex items-center gap-1.5">
-                          <LogOut className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                          <LogOut className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
                           <span className="break-words">{t.signOutButtonText}</span>
                         </h4>
-                        <p className="text-[11px] text-rose-700/80 mt-1 leading-relaxed break-words">
+                        <p className="text-[11px] text-rose-700 dark:text-rose-300/80 mt-1 leading-relaxed break-words">
                           {isRu
                             ? 'Завершение текущей сессии. Ключи доступа инстанса будут безопасно удалены с этого устройства.'
                             : 'End your session. Instance credentials and tokens will be safely cleared.'}
@@ -1674,7 +1674,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           <button
                             type="button"
                             onClick={() => setConfirmSignOut(false)}
-                            className="px-3 py-2 rounded-xl text-xs font-medium text-slate-600 bg-white hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
+                            className="px-3 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 bg-white hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
                           >
                             {t.cancel}
                           </button>
@@ -1716,8 +1716,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/80 flex items-center justify-between shrink-0">
-          <div className="text-[11px] text-slate-400 font-mono">
+        <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 flex items-center justify-between shrink-0">
+          <div className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">
             MAX Web • v{APP_VERSION}
           </div>
           <button

@@ -232,7 +232,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
           <button
             type="button"
             onClick={onBackToSidebar}
-            className="md:hidden min-w-[40px] min-h-[40px] flex items-center justify-center -ml-1 text-slate-600 hover:text-slate-900 active:scale-95 rounded-xl transition-all cursor-pointer shrink-0"
+            className="md:hidden min-w-[40px] min-h-[40px] flex items-center justify-center -ml-1 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white active:scale-95 rounded-xl transition-all cursor-pointer shrink-0"
             title={t.backToChats || 'Назад'}
           >
             <ArrowLeft className="w-5 h-5" />
@@ -260,7 +260,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsEditContactOpen(true)}
-                  className="p-1 rounded-md text-slate-400 hover:text-[#471AFF] hover:bg-indigo-50 transition-colors cursor-pointer shrink-0"
+                  className="p-1 rounded-md text-slate-400 hover:text-[#471AFF] dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 transition-colors cursor-pointer shrink-0"
                   title={lang === 'ru' ? 'Изменить имя или реальный номер' : 'Edit name or real number'}
                 >
                   <Edit2 className="w-3 h-3" />
@@ -268,11 +268,11 @@ export const ChatView: React.FC<ChatViewProps> = ({
               </h2>
               {/* Secondary phone or notebook status */}
               {(contact?.contactName || contact?.name) ? (
-                <span className="text-[10px] font-mono text-slate-500 font-normal shrink-0 hidden sm:inline truncate">
+                <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 font-normal shrink-0 hidden sm:inline truncate">
                   {displayPhone}
                 </span>
               ) : (
-                <span className="text-[10px] font-mono text-slate-400 font-normal shrink-0 hidden sm:inline truncate">
+                <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 font-normal shrink-0 hidden sm:inline truncate">
                   ({chatId})
                 </span>
               )}
@@ -282,7 +282,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
                 <button
                   type="button"
                   onClick={onOpenAddressBook}
-                  className="hidden md:inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-[#471AFF] hover:bg-indigo-100 transition-colors cursor-pointer"
+                  className="hidden md:inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 dark:bg-indigo-950/60 text-[#471AFF] dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors cursor-pointer"
                   title={t.inAddressBook}
                 >
                   <BookUser className="w-3 h-3" />
@@ -293,7 +293,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
                   <button
                     type="button"
                     onClick={onOpenAddressBook}
-                    className="hidden md:inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-[#471AFF] transition-colors cursor-pointer"
+                    className="hidden md:inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 hover:text-[#471AFF] dark:hover:text-indigo-300 transition-colors cursor-pointer"
                     title={t.addToContacts}
                   >
                     <Plus className="w-3 h-3" />
@@ -310,7 +310,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
                 role="status"
                 aria-live="polite"
               >
-                <span className="text-[11px] font-semibold text-[#471AFF] flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-[#471AFF] dark:text-indigo-300 flex items-center gap-1.5">
                   <span>{t.typing}</span>
                   <span className="inline-flex items-center gap-0.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#471AFF] animate-bounce [animation-delay:-0.3s]" />
@@ -339,8 +339,8 @@ export const ChatView: React.FC<ChatViewProps> = ({
               onClick={() => onSyncHistory(chatId)}
               disabled={isSyncingHistory}
               title={t.syncHistory}
-              className={`p-2 min-w-[36px] min-h-[36px] flex items-center justify-center text-slate-400 hover:text-[#471AFF] hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer disabled:opacity-50 ${
-                isSyncingHistory ? 'text-[#471AFF]' : ''
+              className={`p-2 min-w-[36px] min-h-[36px] flex items-center justify-center text-slate-400 hover:text-[#471AFF] dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 rounded-lg transition-colors cursor-pointer disabled:opacity-50 ${
+                isSyncingHistory ? 'text-[#471AFF] dark:text-indigo-300' : ''
               }`}
             >
               <RotateCw className={`w-4 h-4 ${isSyncingHistory ? 'animate-spin' : ''}`} />
@@ -352,7 +352,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
               type="button"
               onClick={onOpenAddressBook}
               title={lang === 'ru' ? 'Записная книжка' : 'Address book'}
-              className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center text-slate-400 hover:text-[#471AFF] hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer hidden sm:flex"
+              className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center text-slate-400 hover:text-[#471AFF] dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 rounded-lg transition-colors cursor-pointer hidden sm:flex"
             >
               <BookUser className="w-4 h-4" />
             </button>
@@ -364,7 +364,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
               type="button"
               onClick={() => setShowOptions(!showOptions)}
               title={t.quickActions}
-              className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
             >
               <MoreVertical className="w-5 h-5 sm:w-4 sm:h-4" />
             </button>
@@ -649,7 +649,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
               <button
                 type="button"
                 onClick={() => setShowMobileActions(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -744,7 +744,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
           <button
             type="button"
             onClick={() => setShowMobileActions(!showMobileActions)}
-            className="md:hidden w-8.5 h-8.5 min-w-[34px] min-h-[34px] rounded-full text-slate-500 hover:text-[#471AFF] hover:bg-slate-200/70 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            className="md:hidden w-8.5 h-8.5 min-w-[34px] min-h-[34px] rounded-full text-slate-500 dark:text-slate-400 hover:text-[#471AFF] dark:hover:text-indigo-300 hover:bg-slate-200/70 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer shrink-0"
             title={t.quickActions}
           >
             <Plus className="w-4.5 h-4.5" />
@@ -784,16 +784,16 @@ export const ChatView: React.FC<ChatViewProps> = ({
       {/* Quick Edit Contact Name & Real Phone Modal */}
       {isEditContactOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between p-4 border-b border-slate-100">
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Edit2 className="w-4 h-4 text-[#471AFF]" />
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Edit2 className="w-4 h-4 text-[#471AFF] dark:text-indigo-400" />
                 <span>{lang === 'ru' ? 'Редактировать контакт' : 'Edit Contact'}</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setIsEditContactOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -801,7 +801,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
 
             <form onSubmit={handleSaveContactDetails} className="p-4 space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">
                   {lang === 'ru' ? 'Имя или псевдоним собеседника' : 'Contact Name / Nickname'}
                 </label>
                 <input
@@ -809,13 +809,13 @@ export const ChatView: React.FC<ChatViewProps> = ({
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   placeholder={lang === 'ru' ? 'например, Алексей' : 'e.g. Alex'}
-                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:outline-none focus:border-[#471AFF] focus:ring-1 focus:ring-[#471AFF]"
+                  className="w-full px-3 py-2 text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:border-[#471AFF] focus:ring-1 focus:ring-[#471AFF]"
                   autoFocus
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">
                   {lang === 'ru' ? 'Реальный номер телефона или ID' : 'Real Phone Number or ID'}
                 </label>
                 <input
@@ -823,15 +823,15 @@ export const ChatView: React.FC<ChatViewProps> = ({
                   value={editPhone}
                   onChange={(e) => setEditPhone(e.target.value)}
                   placeholder="+375 29 123-45-67 или 454641449"
-                  className="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-xl focus:outline-none focus:border-[#471AFF] focus:ring-1 focus:ring-[#471AFF]"
+                  className="w-full px-3 py-2 text-xs font-mono text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:border-[#471AFF] focus:ring-1 focus:ring-[#471AFF]"
                 />
-                <p className="text-[10px] text-slate-400 mt-1">
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
                   {lang === 'ru' ? `Шлюз GREEN-API ID: ${chatId}` : `GREEN-API ID: ${chatId}`}
                 </p>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">
                   {lang === 'ru' ? 'Заметка / Компания' : 'Note / Company'}
                 </label>
                 <input
@@ -839,7 +839,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
                   value={editNote}
                   onChange={(e) => setEditNote(e.target.value)}
                   placeholder={lang === 'ru' ? 'Клиент, коллега...' : 'Client, colleague...'}
-                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:outline-none focus:border-[#471AFF] focus:ring-1 focus:ring-[#471AFF]"
+                  className="w-full px-3 py-2 text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:border-[#471AFF] focus:ring-1 focus:ring-[#471AFF]"
                 />
               </div>
 
@@ -847,7 +847,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsEditContactOpen(false)}
-                  className="px-3 py-1.5 rounded-xl text-xs text-slate-600 hover:bg-slate-100 font-medium cursor-pointer"
+                  className="px-3 py-1.5 rounded-xl text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium cursor-pointer"
                 >
                   {lang === 'ru' ? 'Отмена' : 'Cancel'}
                 </button>

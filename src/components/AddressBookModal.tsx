@@ -165,23 +165,23 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-150">
+      <div className="w-full max-w-2xl max-h-[90vh] bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/80 shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 text-[#471AFF] flex items-center justify-center shadow-2xs">
+            <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-[#471AFF] dark:text-indigo-300 flex items-center justify-center shadow-2xs">
               <BookUser className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-slate-900 text-sm sm:text-base">
+                <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">
                   {lang === 'ru' ? 'Записная книжка MAX' : 'MAX Address Book'}
                 </h3>
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-100 text-[#471AFF]">
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-100 dark:bg-indigo-950/60 text-[#471AFF] dark:text-indigo-300">
                   {contacts.length}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 {lang === 'ru'
                   ? 'Синхронизация контактов через API для веб-мессенджера и интеграций'
                   : 'Contacts synchronized via API for web messenger & embed integrations'}
@@ -192,7 +192,7 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -200,14 +200,14 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
 
         {/* Feedback Banner */}
         {feedbackMessage && (
-          <div className="px-5 py-2.5 bg-emerald-50 border-b border-emerald-100 text-emerald-800 text-xs flex items-center gap-2 transition-all">
-            <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+          <div className="px-5 py-2.5 bg-emerald-50 dark:bg-emerald-950/40 border-b border-emerald-100 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2 transition-all">
+            <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span className="font-medium">{feedbackMessage}</span>
           </div>
         )}
 
         {/* Top Controls: Search & Sync */}
-        <div className="p-4 border-b border-slate-100 bg-white flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
+        <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
@@ -219,13 +219,13 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
                   ? 'Поиск по имени, номеру телефона, компании...'
                   : 'Search by name, phone number, company...'
               }
-              className="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#471AFF]/20 focus:border-[#471AFF] focus:bg-white transition-all"
+              className="w-full pl-9 pr-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#471AFF]/20 focus:border-[#471AFF] focus:bg-white dark:focus:bg-slate-800 transition-all"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -237,14 +237,14 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
               type="button"
               onClick={handleTriggerSync}
               disabled={isSyncing}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-2xs active:scale-95"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-2xs active:scale-95"
               title={
                 lastSyncTime
                   ? `${lang === 'ru' ? 'Последняя синхронизация:' : 'Last sync:'} ${new Date(lastSyncTime).toLocaleTimeString()}`
                   : undefined
               }
             >
-              <RefreshCw className={`w-3.5 h-3.5 text-[#471AFF] ${isSyncing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 text-[#471AFF] dark:text-indigo-300 ${isSyncing ? 'animate-spin' : ''}`} />
               <span>{isSyncing ? (lang === 'ru' ? 'Синхронизация...' : 'Syncing...') : (lang === 'ru' ? 'Синхронизировать' : 'Sync Contacts')}</span>
             </button>
 
@@ -263,10 +263,10 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
         {isAdding && (
           <form
             onSubmit={handleSubmitForm}
-            className="p-4 bg-indigo-50/50 border-b border-indigo-100 flex flex-col gap-3 shrink-0 animate-in slide-in-from-top-2 duration-150"
+            className="p-4 bg-indigo-50/50 dark:bg-indigo-950/30 border-b border-indigo-100 dark:border-indigo-800 flex flex-col gap-3 shrink-0 animate-in slide-in-from-top-2 duration-150"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[#471AFF]">
+              <span className="text-xs font-bold text-[#471AFF] dark:text-indigo-300">
                 {editingContactId
                   ? (lang === 'ru' ? 'Редактировать контакт' : 'Edit Contact')
                   : (lang === 'ru' ? 'Новый контакт в записную книжку' : 'New Contact')}
@@ -274,7 +274,7 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
               <button
                 type="button"
                 onClick={handleCancelForm}
-                className="text-xs text-slate-500 hover:text-slate-800"
+                className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
               >
                 {t.cancel}
               </button>
@@ -282,7 +282,7 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-200 mb-1">
                   {lang === 'ru' ? 'Имя или контактное лицо' : 'Full Name'}
                 </label>
                 <input
@@ -291,12 +291,12 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   placeholder={lang === 'ru' ? 'Алексей Смирнов' : 'John Doe'}
-                  className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#471AFF]"
+                  className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#471AFF]"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-200 mb-1">
                   {lang === 'ru' ? 'Номер телефона (MAX ID)' : 'Phone Number'}
                 </label>
                 <input
@@ -306,12 +306,12 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
                   value={formPhone}
                   onChange={(e) => setFormPhone(e.target.value)}
                   placeholder="79991234567"
-                  className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 font-mono focus:outline-none focus:ring-1 focus:ring-[#471AFF] disabled:bg-slate-100"
+                  className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-slate-100 font-mono focus:outline-none focus:ring-1 focus:ring-[#471AFF] disabled:bg-slate-100 dark:disabled:bg-slate-700"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-200 mb-1">
                   {lang === 'ru' ? 'Компания / Отдел (опционально)' : 'Company / Role (optional)'}
                 </label>
                 <input
@@ -319,12 +319,12 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
                   value={formCompany}
                   onChange={(e) => setFormCompany(e.target.value)}
                   placeholder={lang === 'ru' ? 'ООО «Технологии»' : 'Acme Corp'}
-                  className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#471AFF]"
+                  className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#471AFF]"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-200 mb-1">
                   {lang === 'ru' ? 'Заметка / Тег (опционально)' : 'Note / Tag (optional)'}
                 </label>
                 <input
@@ -332,20 +332,20 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
                   value={formNote}
                   onChange={(e) => setFormNote(e.target.value)}
                   placeholder={lang === 'ru' ? 'Клиент по интеграции API' : 'Key client'}
-                  className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#471AFF]"
+                  className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#471AFF]"
                 />
               </div>
             </div>
 
             {formError && (
-              <p className="text-xs text-rose-600 font-medium">{formError}</p>
+              <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">{formError}</p>
             )}
 
             <div className="flex justify-end gap-2 pt-1">
               <button
                 type="button"
                 onClick={handleCancelForm}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-100 cursor-pointer"
+                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
               >
                 {t.cancel}
               </button>
@@ -360,18 +360,18 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
         )}
 
         {/* Contacts List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2 divide-y divide-slate-100/80">
+        <div className="flex-1 overflow-y-auto p-4 space-y-2 divide-y divide-slate-100/80 dark:divide-slate-800">
           {filteredContacts.length === 0 ? (
             <div className="py-12 px-4 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-[#471AFF] flex items-center justify-center mx-auto mb-3 shadow-2xs">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-[#471AFF] dark:text-indigo-300 flex items-center justify-center mx-auto mb-3 shadow-2xs">
                 <BookUser className="w-6 h-6" />
               </div>
-              <h4 className="text-sm font-bold text-slate-800 mb-1">
+              <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-1">
                 {contacts.length === 0
                   ? (lang === 'ru' ? 'Записная книжка пуста' : 'Address book is empty')
                   : (lang === 'ru' ? 'Контакты не найдены' : 'No contacts found')}
               </h4>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-4">
                 {contacts.length === 0
                   ? (lang === 'ru'
                       ? 'Нажмите «Синхронизировать» для загрузки списка контактов из вашего аккаунта MAX через GREEN-API, либо добавьте контакт вручную.'
@@ -402,7 +402,7 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
               return (
                 <div
                   key={contact.id}
-                  className="pt-2.5 first:pt-0 flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors group"
+                  className="pt-2.5 first:pt-0 flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors group"
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     <Avatar
@@ -413,17 +413,17 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-slate-900 text-xs sm:text-sm truncate">
+                        <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs sm:text-sm truncate">
                           {displayName}
                         </span>
                         {/* Source Badge */}
                         <span
                           className={`px-1.5 py-0.5 rounded text-[10px] font-medium tracking-tight ${
                             contact.source === 'api'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                              ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800'
                               : contact.source === 'manual'
-                              ? 'bg-indigo-50 text-[#471AFF] border border-indigo-100'
-                              : 'bg-amber-50 text-amber-800 border border-amber-100'
+                              ? 'bg-indigo-50 dark:bg-indigo-950/60 text-[#471AFF] dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800'
+                              : 'bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-100 dark:border-amber-800'
                           }`}
                         >
                           {contact.source === 'api'
@@ -434,16 +434,16 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2.5 text-[11px] text-slate-500 mt-0.5">
-                        <span className="font-mono text-slate-600">{formattedPhone}</span>
+                      <div className="flex items-center gap-2.5 text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        <span className="font-mono text-slate-600 dark:text-slate-300">{formattedPhone}</span>
                         {contact.company && (
-                          <span className="hidden sm:inline-flex items-center gap-1 text-slate-500 truncate">
-                            <Building className="w-3 h-3 text-slate-400 shrink-0" />
+                          <span className="hidden sm:inline-flex items-center gap-1 text-slate-500 dark:text-slate-400 truncate">
+                            <Building className="w-3 h-3 text-slate-400 dark:text-slate-500 shrink-0" />
                             <span className="truncate">{contact.company}</span>
                           </span>
                         )}
                         {contact.note && (
-                          <span className="hidden md:inline-flex items-center gap-1 text-slate-400 italic truncate max-w-[140px]">
+                          <span className="hidden md:inline-flex items-center gap-1 text-slate-400 dark:text-slate-500 italic truncate max-w-[140px]">
                             <FileText className="w-3 h-3 shrink-0" />
                             <span className="truncate">{contact.note}</span>
                           </span>
@@ -470,7 +470,7 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
                     <button
                       type="button"
                       onClick={() => handleStartEdit(contact)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/70 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                       title={lang === 'ru' ? 'Редактировать' : 'Edit'}
                     >
                       <Edit2 className="w-3.5 h-3.5" />
@@ -479,7 +479,7 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
                     <button
                       type="button"
                       onClick={() => onDeleteContact(contact.id)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
                       title={lang === 'ru' ? 'Удалить из книжки' : 'Delete'}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -492,9 +492,9 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
         </div>
 
         {/* Footer info */}
-        <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between text-[11px] text-slate-500 shrink-0">
+        <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 shrink-0">
           <div className="flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-[#471AFF]" />
+            <Sparkles className="w-3.5 h-3.5 text-[#471AFF] dark:text-indigo-400" />
             <span>
               {lang === 'ru'
                 ? 'Контакты доступны для интеграции через REST API и postMessage'
@@ -502,7 +502,7 @@ export const AddressBookModal: React.FC<AddressBookModalProps> = ({
             </span>
           </div>
           {lastSyncTime && (
-            <span className="text-slate-400 hidden sm:inline">
+            <span className="text-slate-400 dark:text-slate-500 hidden sm:inline">
               {lang === 'ru' ? 'Обновлено:' : 'Updated:'} {new Date(lastSyncTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}

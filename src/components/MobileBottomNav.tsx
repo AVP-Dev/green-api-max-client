@@ -30,7 +30,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
     <nav
       id="mobile-bottom-navigation"
       aria-label="Mobile Navigation"
-      className="md:hidden shrink-0 w-full bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-[0_-4px_16px_rgba(0,0,0,0.04)] px-4 pt-2 pb-safe z-30 select-none"
+      className="md:hidden shrink-0 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/90 dark:border-slate-800 shadow-[0_-4px_16px_rgba(0,0,0,0.04)] px-4 pt-2 pb-safe z-30 select-none"
     >
       <div className="grid grid-cols-3 gap-2 items-center max-w-sm mx-auto">
         {/* 1. Chats Tab */}
@@ -40,8 +40,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           onClick={onSelectChats}
           className={`flex flex-col items-center justify-center py-1 rounded-2xl transition-all cursor-pointer min-h-[52px] active:scale-95 ${
             activeTab === 'chats'
-              ? 'text-[#471AFF]'
-              : 'text-slate-500 hover:text-slate-800'
+              ? 'text-[#471AFF] dark:text-indigo-300'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
           }`}
           title={t.bottomNavChats}
         >
@@ -54,7 +54,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             )}
           </div>
           <span className={`text-[11px] mt-1 tracking-tight transition-colors truncate max-w-full text-center px-0.5 ${
-            activeTab === 'chats' ? 'font-bold text-[#471AFF]' : 'font-medium text-slate-600'
+            activeTab === 'chats' ? 'font-bold text-[#471AFF] dark:text-indigo-300' : 'font-medium text-slate-600 dark:text-slate-400'
           }`}>
             {t.bottomNavChats}
           </span>
@@ -68,13 +68,13 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           id="mobile-nav-new-chat-button"
           type="button"
           onClick={onOpenNewChat}
-          className="flex flex-col items-center justify-center py-1 rounded-2xl text-slate-600 hover:text-[#471AFF] transition-all cursor-pointer min-h-[52px] group active:scale-95"
+          className="flex flex-col items-center justify-center py-1 rounded-2xl text-slate-600 dark:text-slate-400 hover:text-[#471AFF] dark:hover:text-indigo-300 transition-all cursor-pointer min-h-[52px] group active:scale-95"
           title={t.bottomNavNewChat}
         >
           <div className="w-8 h-8 rounded-full max-gradient-primary text-white flex items-center justify-center shadow-sm group-hover:shadow-indigo-300/40 transition-all">
             <UserPlus className="w-4 h-4 ml-0.5" />
           </div>
-          <span className="text-[11px] mt-1 font-semibold text-slate-700 tracking-tight truncate max-w-full text-center px-0.5">
+          <span className="text-[11px] mt-1 font-semibold text-slate-700 dark:text-slate-300 tracking-tight truncate max-w-full text-center px-0.5">
             {t.bottomNavNewChat}
           </span>
         </button>
@@ -86,8 +86,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           onClick={onOpenSettings}
           className={`flex flex-col items-center justify-center py-1 rounded-2xl transition-all cursor-pointer min-h-[52px] active:scale-95 ${
             activeTab === 'settings'
-              ? 'text-[#471AFF]'
-              : 'text-slate-500 hover:text-slate-800'
+              ? 'text-[#471AFF] dark:text-indigo-300'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
           }`}
           title={t.bottomNavSettings}
         >
@@ -95,7 +95,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             <SettingsIcon className={`w-5 h-5 transition-transform ${activeTab === 'settings' ? 'scale-105 stroke-[2.5]' : 'stroke-[1.8]'}`} />
           </div>
           <span className={`text-[11px] mt-1 tracking-tight transition-colors truncate max-w-full text-center px-0.5 ${
-            activeTab === 'settings' ? 'font-bold text-[#471AFF]' : 'font-medium text-slate-600'
+            activeTab === 'settings' ? 'font-bold text-[#471AFF] dark:text-indigo-300' : 'font-medium text-slate-600 dark:text-slate-400'
           }`}>
             {t.bottomNavSettings}
           </span>
