@@ -819,7 +819,9 @@ export default function App() {
         playNotificationSound();
       }
 
-      // Popup notification & native desktop notification for incoming messages
+      // Single-channel routing: только ОДИН визуальный канал за раз (без задвоения).
+      // - Смотрим на вкладку → только in-app карточка (если включена и чат не открыт прямо сейчас).
+      // - Вкладка свернута/неактивна → только мигание заголовка + системное уведомление (если включены).
       if (isIncoming) {
         enrichContactInfo(cleanChatId);
 
@@ -827,34 +829,48 @@ export default function App() {
           const contactObj = contacts.find((c) => c.id === cleanChatId);
           const resolvedSender = contactObj?.contactName || contactObj?.name || newMsg.senderName;
 
-          // Notify browser tab (flashing title if tab is inactive or new message)
-          notifyNewIncoming(resolvedSender, newMsg.text);
+          const tabVisible =
+            typeof document !== 'undefined' &&
+            !document.hidden &&
+            isWindowFocusedRef.current &&
+            (typeof document.hasFocus !== 'function' || document.hasFocus());
 
-          // In-app popup notification with high visibility
-          setPopupNotification({
-            id: newMsg.id,
-            chatId: cleanChatId,
-            senderName: resolvedSender,
-            text: newMsg.text,
-            timestamp: newMsg.timestamp,
-            avatarUrl: contactObj?.avatarUrl,
-          });
-
-          // Browser desktop notification
-          if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-            try {
-              const displayTitle = resolvedSender || formatDisplayPhone(cleanChatId);
-              const notif = new Notification(displayTitle, {
-                body: newMsg.text,
-                icon: contactObj?.avatarUrl || '/favicon.svg',
+          if (tabVisible) {
+            if (settings.inAppPopupsEnabled !== false && !isActivelyViewing) {
+              setPopupNotification({
+                id: newMsg.id,
+                chatId: cleanChatId,
+                senderName: resolvedSender,
+                text: newMsg.text,
+                timestamp: newMsg.timestamp,
+                avatarUrl: contactObj?.avatarUrl,
               });
-              notif.onclick = () => {
-                window.focus();
-                handleSelectChat(cleanChatId);
-                notif.close();
-              };
-            } catch (err) {
-              console.warn('Desktop notification error:', err);
+            }
+          } else {
+            // Browser tab alert (flashing title + favicon badge via unread counters)
+            notifyNewIncoming(resolvedSender, newMsg.text);
+
+            // Browser desktop (OS-level) notification
+            if (
+              settings.browserNotificationsEnabled !== false &&
+              typeof window !== 'undefined' &&
+              'Notification' in window &&
+              Notification.permission === 'granted'
+            ) {
+              try {
+                const displayTitle = resolvedSender || formatDisplayPhone(cleanChatId);
+                const notif = new Notification(displayTitle, {
+                  body: newMsg.text,
+                  icon: contactObj?.avatarUrl || '/favicon.svg',
+                });
+                notif.onclick = () => {
+                  window.focus();
+                  handleSelectChat(cleanChatId);
+                  notif.close();
+                };
+              } catch (err) {
+                console.warn('Desktop notification error:', err);
+              }
             }
           }
         }
@@ -882,7 +898,16 @@ export default function App() {
 
       return true;
     },
-    [activeChatId, lang, settings.soundEnabled, contacts, enrichContactInfo, notifyNewIncoming]
+    [
+      activeChatId,
+      lang,
+      settings.soundEnabled,
+      settings.browserNotificationsEnabled,
+      settings.inAppPopupsEnabled,
+      contacts,
+      enrichContactInfo,
+      notifyNewIncoming,
+    ]
   );
 
   // Journal & history synchronization engines
@@ -1711,15 +1736,21 @@ export default function App() {
 
   const activeDialog = dialogs.find((d) => d.chatId === activeChatId);
 
+  // Тест «текущего» канала: вкладка открыта → только in-app карточка (+звук).
+  // Системное тестируется отдельной кнопкой «Проверить системное» (форс, bypass роутинга).
   const handleTestNotification = () => {
     if (settings.soundEnabled) {
       playNotificationSound();
     }
 
-    notifyNewIncoming(
-      lang === 'ru' ? 'MAX Ассистент' : 'MAX Assistant',
-      lang === 'ru' ? 'Тестовое входящее сообщение' : 'Test incoming message'
-    );
+    if (settings.inAppPopupsEnabled === false) {
+      showToast(
+        lang === 'ru'
+          ? 'Всплывающие карточки отключены тумблером выше'
+          : 'In-app popups are switched off above'
+      );
+      return;
+    }
 
     setPopupNotification({
       id: `test_${Date.now()}`,
@@ -1727,29 +1758,35 @@ export default function App() {
       senderName: lang === 'ru' ? 'MAX Ассистент' : 'MAX Assistant',
       text:
         lang === 'ru'
-          ? 'Привет! Всплывающее уведомление и бейдж на вкладке работают отлично!'
-          : 'Hello! Visual popup notification and tab badge are working great!',
+          ? 'Привет! Всплывающая карточка работает — системное уведомление при этом НЕ приходит.'
+          : 'Hello! The in-app card works — no system notification alongside it.',
       timestamp: Date.now(),
     });
-
-    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-      try {
-        const notif = new Notification('MAX Web Messenger', {
-          body:
-            lang === 'ru'
-              ? 'Тестовое системное уведомление рабочего стола'
-              : 'Test system notification',
-          icon: '/favicon.svg',
-        });
-        notif.onclick = () => {
-          window.focus();
-          notif.close();
-        };
-      } catch (err) {
-        console.warn('Test notification error:', err);
-      }
-    }
   };
+
+  // Форсированный тест системного (OS-level) канала — bypass роутинга по фокусу.
+  // Возвращает true, если уведомление реально показано.
+  const handleTestBrowserNotification = useCallback((): boolean => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return false;
+    if (Notification.permission !== 'granted') return false;
+    try {
+      const notif = new Notification('MAX Web Messenger', {
+        body:
+          lang === 'ru'
+            ? 'Тестовое системное уведомление рабочего стола'
+            : 'Test desktop system notification',
+        icon: '/favicon.svg',
+      });
+      notif.onclick = () => {
+        window.focus();
+        notif.close();
+      };
+      return true;
+    } catch (err) {
+      console.warn('Test browser notification error:', err);
+      return false;
+    }
+  }, [lang]);
 
   return (
     <div className="fixed inset-0 w-full h-full flex overflow-hidden bg-white dark:bg-slate-950 select-none font-sans">
@@ -1899,6 +1936,7 @@ export default function App() {
             onOpenQuickReplies={() => setIsQuickRepliesModalOpen(true)}
             quickRepliesCount={quickReplies.length}
             onTestNotification={handleTestNotification}
+            onTestBrowserNotification={handleTestBrowserNotification}
             credsPersistent={credsPersistent}
             onUpdateCredsPersistence={handleUpdateCredsPersistence}
             onImportBackup={handleImportBackup}
