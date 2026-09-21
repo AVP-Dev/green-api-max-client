@@ -1,5 +1,7 @@
 # MAX Web Messenger Client
 
+> **English** • [🇷🇺 Русская версия](./README.ru.md) · [📚 Документация](./docs/ru/README.md)
+
 A lightweight, production-ready React web client designed to interface with the MAX messenger ecosystem via GREEN-API HTTP endpoints. It delivers a fast, responsive user interface inspired by modern web messaging standards, complete with chat management, message delivery status, contact search, and configurable gateway routing.
 
 ---
@@ -7,11 +9,13 @@ A lightweight, production-ready React web client designed to interface with the 
 ## Tech Stack
 
 - **Frontend Framework:** React 19 (Functional Components, Hooks)
-- **Language:** TypeScript 5+ (Strict Typing, `tsc --noEmit`)
-- **Bundler & Tooling:** Vite 6+ with `@vitejs/plugin-react` and `vite-plugin-pwa`
-- **Styling:** Tailwind CSS (Utility-first, responsive design, custom MAX brand gradients)
+- **Language:** TypeScript 7 (Strict Typing, `tsc --noEmit`)
+- **Bundler & Tooling:** Vite 8 with `@vitejs/plugin-react` and `vite-plugin-pwa`
+- **Styling:** Tailwind CSS (Utility-first, class-based dark theme with centralized palette in `src/theme.ts`)
 - **Icons:** Lucide Icons (`lucide-react`)
-- **State Management & Persistence:** React State & Hooks with `localStorage` synchronization
+- **Runtime Validation:** `zod` schemas for GREEN-API payloads (`src/utils/greenApiSchemas.ts`)
+- **State Management & Persistence:** React State & Hooks with `localStorage`/`sessionStorage` synchronization
+- **Tests:** Vitest unit tests (`npm test`), including a theme centralization guard
 - **Containerization:** Docker (Multi-stage build) & Nginx Alpine
 - **Continuous Integration:** GitHub Actions (`.github/workflows/ci.yml`)
 
@@ -30,6 +34,9 @@ A lightweight, production-ready React web client designed to interface with the 
 - **Resilient Messaging:** Click-to-retry on failed messages, history skeletons, search result counts.
 - **Privacy Controls:** Session vs persistent token storage switch, inactivity auto-lock, message TTL, AES-GCM encrypted backups with import.
 - **Optional BFF Proxy:** Tokenless browser mode (`bff/`, Node 22 dependency-free) for multi-user prod — see `bff/README.md`.
+- **Single-Channel Notifications:** In-app card while you look at the tab, OS notification while it is hidden — never both. Focus-based routing (`resolveNotificationChannel`), per-chat tag dedup, auto-dismiss on return.
+- **Scalable Address Book:** Alphabetical sections with sticky headers, live search with result counts, paged rendering for thousands of contacts, GREEN-API sync.
+- **Honest Presence:** No fake “online” — the header shows online/recently/last-seen only from real incoming activity (GREEN-API exposes no presence), groups show “group”, and the status refreshes live.
 
 ---
 
@@ -43,10 +50,10 @@ A lightweight, production-ready React web client designed to interface with the 
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/max-web-messenger.git
+git clone https://github.com/AVP-Dev/green-api-max-client.git
 
 # Navigate to project directory
-cd max-web-messenger
+cd green-api-max-client
 
 # Install dependencies
 npm install
@@ -107,17 +114,21 @@ Without it the widget drops inbound postMessage commands in production (fail-clo
 
 The repository is configured with a strict GitHub Actions workflow located at `.github/workflows/ci.yml`:
 
-1. **Type Safety & Lint (`typecheck`):**
+1. **Type Safety, Lint & Tests (`typecheck`):**
    - Runs on `ubuntu-latest` with Node.js 22.
    - Installs dependencies deterministically via `npm ci`.
    - Executes `tsc --noEmit` to guarantee zero type errors.
+   - Runs `npm test` (Vitest unit tests, including the dark-theme centralization guard).
 
-2. **Production Build (`build`):**
+2. **Security Audit (`security-audit`):**
+   - Runs `npm audit --omit=dev --audit-level=moderate` (fails on moderate+).
+
+3. **Production Build (`build`):**
    - Compiles static assets using `npm run build` (`vite build`).
    - Verifies the integrity of `dist/index.html` and bundles.
    - Uploads compressed build artifacts for deployment.
 
-3. **Docker Verification (`docker`):**
+4. **Docker Verification (`docker`):**
    - Sets up Docker Buildx with GitHub Actions layer caching.
    - Verifies that the multi-stage container and Nginx SPA configuration build cleanly.
 
@@ -139,9 +150,16 @@ The repository is configured with a strict GitHub Actions workflow located at `.
 - **Outgoing typing works:** while typing, the client sends `sendTyping` (`{ chatId, typingTime: 5000 }`, plain numeric first with `@c.us` fallback per official docs).
 - **Incoming typing cannot arrive:** GREEN-API has no incoming presence/typing webhook type (verified against the official `type-webhook` list), so “interlocutor is typing” never comes from the network. The header indicator UI is kept (with a “Test: typing indicator” item in the chat ⋮ menu) in case MAX-type instances start emitting presence events; the parser lives in `src/utils/typing.ts`.
 
-### 3. Security & Credential Management
+### 4. Security & Credential Management
 - **Security Notice:** Inputting API tokens (`idInstance`, `apiTokenInstance`) directly into a browser SPA is suitable for demonstration environments, internal tooling, or personal single-tenant use.
 - **BFF (Backend for Frontend) Best Practice:** For production deployments with multiple untrusted users, credentials should never be stored in browser `localStorage` or transmitted from client code. Instead, requests should be proxied through a secure backend (BFF) that manages secret credentials in a secure vault and authenticates end-users via JWT or session cookies.
+- **Shipped BFF included:** this repo contains a minimal dependency-free BFF (`bff/server.mjs`, see `bff/README.md`) plus tokenless client mode (`src/utils/bffClient.ts`, toggle in Settings → Connection). Details in [`SECURITY.md`](./SECURITY.md).
+
+### 5. Single-Channel Notifications
+- **Focus-based routing:** every incoming message fires exactly one visual channel — `resolveNotificationChannel()` in `src/utils/notifications.ts` picks the in-app card (`PopupNotification`) when the tab is focused, or the OS notification when it is hidden, with fallback to the second channel if the primary is switched off.
+- **Per-chat dedup & auto-dismiss:** native notifications share `tag: max-chat-<chatId>` (rapid messages replace instead of stacking); stale notifications auto-close on `visibilitychange`/`focus` and when their chat is opened.
+- **Tab chrome always on:** flashing title + canvas-drawn favicon badge (`useTabNotification`) work independently of the channel.
+- **Full guide (RU):** [`docs/ru/notifications.md`](./docs/ru/notifications.md).
 
 ---
 
@@ -150,58 +168,96 @@ The repository is configured with a strict GitHub Actions workflow located at `.
 ```
 ├── .github/
 │   └── workflows/
-│       └── ci.yml             # GitHub Actions automated CI/CD pipeline
+│       └── ci.yml             # typecheck + tests + audit + build + docker
+├── bff/                       # Optional tokenless BFF proxy (Node 22, no deps)
+│   ├── server.mjs             # send/receive/ack forwarding, token vault
+│   └── README.md              # BFF contract & run instructions
+├── docs/
+│   └── ru/                    # Russian docs (cross-linked)
+│       ├── README.md          # Docs index
+│       ├── notifications.md   # Channels, focus routing, permissions
+│       └── settings.md        # Settings tabs walkthrough
 ├── public/                    # Static web assets and PWA icons
-│   ├── favicon.svg            # Favicon
-│   ├── logo.svg               # MAX brand vector logo
-│   ├── apple-touch-icon.png   # iOS touch icon
-│   ├── pwa-192x192.png        # PWA standard icon
-│   ├── pwa-512x512.png        # PWA splash icon
-│   └── pwa-maskable-512x512.png # PWA maskable adaptive icon
 ├── scripts/
 │   └── generate-icons.js      # Sharp-based icon generation utility
 ├── src/
 │   ├── components/            # Modular React UI components
+│   │   ├── AddressBookModal.tsx # Grouped, searchable, paged address book
 │   │   ├── AuthScreen.tsx     # Instance credentials & gateway configuration
-│   │   ├── Avatar.tsx         # Initials extractor & deterministic pastel colors
-│   │   ├── ChatView.tsx       # Message timeline, delivery status & compose input
+│   │   ├── Avatar.tsx         # Initials & deterministic pastel colors
+│   │   ├── ChatView.tsx       # Message timeline, retry, typing & compose input
+│   │   ├── ErrorBoundary.tsx  # React error boundary with data reset
+│   │   ├── IntegrationModal.tsx # (legacy, unused) integration dialog
+│   │   ├── IntegrationPanel.tsx # Iframe/URL/postMessage CRM integration
 │   │   ├── MaxLogo.tsx        # MAX brand vector mark
-│   │   ├── MobileBottomNav.tsx # Mobile view tab navigation (Chats, New, Settings)
+│   │   ├── MobileBottomNav.tsx # Mobile bottom tab navigation
 │   │   ├── NewChatModal.tsx   # Phone validation modal & contact creation
-│   │   ├── OfflineIndicator.tsx # Floating network connectivity banner
-│   │   ├── PWAInstallButton.tsx # Home screen installation button
-│   │   ├── SettingsModal.tsx  # Diagnostics, gateway routing, audio & data reset
-│   │   └── Sidebar.tsx        # Search bar, pinned chats & conversation list
-│   ├── hooks/                 # Custom React hooks
-│   │   ├── useGreenApiPolling.ts # Adaptive HTTP long-polling engine
-│   │   ├── useOnlineStatus.ts # Browser online/offline event listener
-│   │   └── usePWAInstall.ts   # PWA installation prompt controller
-│   ├── i18n/                  # Localization dictionary
-│   │   └── translations.ts    # Complete Russian and English translations
-│   ├── services/              # API Client Service
-│   │   └── greenApi.ts        # GREEN-API REST endpoints wrapper
-│   ├── utils/                 # Pure helper functions
-│   │   ├── formatters.ts      # International phone & timestamp formatting
-│   │   └── sound.ts           # Web Audio API synthetic notification chime
+│   │   ├── OfflineIndicator.tsx # Floating connectivity banner
+│   │   ├── PopupNotification.tsx # In-app incoming message card
+│   │   ├── PWAInstallButton.tsx # Home-screen install button + iOS guide
+│   │   ├── QuickRepliesModal.tsx # Quick-reply template manager
+│   │   ├── SettingsModal.tsx  # 5 tabs: chat, notifications, gateway, integration, data
+│   │   ├── Sidebar.tsx        # Search, pinned chats & conversation list
+│   │   └── Skeletons.tsx      # Loading skeletons (chats, dialogs)
+│   ├── hooks/
+│   │   ├── useGreenApiPolling.ts # Adaptive long-polling engine + webhook types
+│   │   ├── useOnlineStatus.ts # Browser online/offline listener
+│   │   ├── usePWAInstall.ts   # PWA install prompt controller
+│   │   └── useTabNotification.ts # Title flash + canvas favicon badge
+│   ├── i18n/
+│   │   └── translations.ts    # Complete RU/EN dictionary
+│   ├── services/
+│   │   └── greenApi.ts        # GREEN-API REST wrapper (allowlist + BFF route)
+│   ├── utils/
+│   │   ├── backupCrypto.ts    # AES-GCM backup encryption (WebCrypto)
+│   │   ├── bffClient.ts       # Tokenless BFF client
+│   │   ├── credentialStorage.ts # sessionStorage/localStorage credential vault
+│   │   ├── formatters.ts      # Phones, timestamps, avatar colors
+│   │   ├── greenApiSchemas.ts # Zod runtime validation of API payloads
+│   │   ├── notifications.ts   # Single-channel routing, tag dedup, autoclose
+│   │   ├── postMessageSecurity.ts # OWASP postMessage bridge helpers
+│   │   ├── quickReplies.ts    # Default quick-reply templates
+│   │   ├── sound.ts           # Web Audio notification chime
+│   │   ├── storage.ts         # Fail-safe storage wrapper
+│   │   └── typing.ts          # Presence/typing extraction + docs note
+│   ├── config.ts              # Central defaults (polling, limits, storage keys)
+│   ├── theme.ts               # Dark-theme palette + centralization rules
 │   ├── types.ts               # Shared TypeScript definitions
-│   ├── index.css              # Tailwind utilities, brand styling & safe area insets
+│   ├── index.css              # Tailwind, brand styling & safe areas
 │   ├── App.tsx                # Central state coordinator & root component
-│   └── main.tsx               # React application entry point
-├── .dockerignore              # Exclusions for Docker image builds
-├── .env.example               # Environment variables template
-├── .gitignore                 # Version control ignores (credentials, dist, logs)
-├── Dockerfile                 # Multi-stage production container build
-├── docker-compose.yml         # Container orchestration manifest
-├── index.html                 # HTML entry point with MAX meta tags
-├── nginx.conf                 # Production Nginx SPA routing & caching
-├── package.json               # Node.js project manifest & dependencies
-├── package-lock.json          # Dependency lockfile for reproducible builds
-├── tsconfig.json              # Strict TypeScript compiler options
+│   └── main.tsx               # React entry point
+├── .dockerignore
+├── .env.example               # Build-time VITE_* template
+├── Dockerfile                 # Multi-stage production container
+├── docker-compose.yml         # Orchestration (+ optional bff profile)
+├── index.html                 # Entry with MAX meta + pre-paint theme init
+├── nginx.conf                 # SPA routing, caching & security headers
+├── package.json
+├── tsconfig.json              # Strict TypeScript options
+├── vitest.config.ts           # Vitest configuration
 └── vite.config.ts             # Vite bundler, Tailwind & PWA plugin config
 ```
 
 ---
 
+## Documentation
+
+- [README.ru.md](./README.ru.md) — Russian documentation
+- [docs/ru/README.md](./docs/ru/README.md) — Russian docs index
+- [docs/ru/notifications.md](./docs/ru/notifications.md) — notification channels & focus routing
+- [docs/ru/settings.md](./docs/ru/settings.md) — settings tabs walkthrough
+- [bff/README.md](./bff/README.md) — BFF proxy contract & run instructions
+- [SECURITY.md](./SECURITY.md) — threat model & vulnerability reporting
+
+---
+
+## Author
+
+Built and maintained by **[Aliaksei Patskevich (AVPDev)](https://avpdev.com)** —
+[LinkedIn](https://linkedin.com/in/avp-dev) • [Telegram](https://t.me/AVP_Dev) • [Blog](https://avpdev.com/en/blog/)
+
+---
+
 ## License
 
-This project is released under the MIT License.
+This project is released under the MIT License. See [LICENSE](./LICENSE).

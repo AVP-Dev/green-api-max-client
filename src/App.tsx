@@ -34,6 +34,12 @@ import { GreenApiService, DEFAULT_API_URL, validateGatewayUrlOrThrow } from './s
 import { sanitizePhone, formatDisplayPhone } from './utils/formatters';
 import { playNotificationSound } from './utils/sound';
 import { safeStorage } from './utils/storage';
+import {
+  attachNativeAutocloseOnVisible,
+  closeNativeNotificationsForChat,
+  resolveNotificationChannel,
+  showNativeNotification,
+} from './utils/notifications';
 import { loadCreds, saveCreds, clearCreds, isCredsPersistent } from './utils/credentialStorage';
 import {
   getTrustedParentOrigins,
@@ -402,6 +408,11 @@ export default function App() {
   const totalUnreadCount = useMemo(() => {
     return dialogs.reduce((acc, d) => acc + (d.unreadCount || 0), 0);
   }, [dialogs]);
+
+  // Протухшие системные уведомления гаснут сами при возврате во вкладку (MDN-паттерн).
+  useEffect(() => {
+    attachNativeAutocloseOnVisible();
+  }, []);
 
   // Window/tab focus tracking ref to reliably detect if user is looking at this tab
   const isWindowFocusedRef = useRef<boolean>(true);
@@ -819,9 +830,8 @@ export default function App() {
         playNotificationSound();
       }
 
-      // Single-channel routing: только ОДИН визуальный канал за раз (без задвоения).
-      // - Смотрим на вкладку → только in-app карточка (если включена и чат не открыт прямо сейчас).
-      // - Вкладка свернута/неактивна → только мигание заголовка + системное уведомление (если включены).
+      // Single-channel routing через resolveNotificationChannel (см. utils/notifications.ts):
+      // ровно ОДИН визуальный канал за раз, с fallback на второй при выключенном «родном».
       if (isIncoming) {
         enrichContactInfo(cleanChatId);
 
@@ -835,8 +845,14 @@ export default function App() {
             isWindowFocusedRef.current &&
             (typeof document.hasFocus !== 'function' || document.hasFocus());
 
-          if (tabVisible) {
-            if (settings.inAppPopupsEnabled !== false && !isActivelyViewing) {
+          const channel = resolveNotificationChannel(tabVisible, {
+            browserNotificationsEnabled: settings.browserNotificationsEnabled !== false,
+            inAppPopupsEnabled: settings.inAppPopupsEnabled !== false,
+          });
+
+          if (channel === 'popup') {
+            // Карточка не нужна, если этот чат уже открыт — сообщение и так в ленте.
+            if (!isActivelyViewing) {
               setPopupNotification({
                 id: newMsg.id,
                 chatId: cleanChatId,
@@ -846,32 +862,18 @@ export default function App() {
                 avatarUrl: contactObj?.avatarUrl,
               });
             }
-          } else {
-            // Browser tab alert (flashing title + favicon badge via unread counters)
+          } else if (channel === 'native') {
+            // Мигание заголовка + favicon-бейдж (через счётчики непрочитанных)
             notifyNewIncoming(resolvedSender, newMsg.text);
 
-            // Browser desktop (OS-level) notification
-            if (
-              settings.browserNotificationsEnabled !== false &&
-              typeof window !== 'undefined' &&
-              'Notification' in window &&
-              Notification.permission === 'granted'
-            ) {
-              try {
-                const displayTitle = resolvedSender || formatDisplayPhone(cleanChatId);
-                const notif = new Notification(displayTitle, {
-                  body: newMsg.text,
-                  icon: contactObj?.avatarUrl || '/favicon.svg',
-                });
-                notif.onclick = () => {
-                  window.focus();
-                  handleSelectChat(cleanChatId);
-                  notif.close();
-                };
-              } catch (err) {
-                console.warn('Desktop notification error:', err);
-              }
-            }
+            // Системное уведомление ОС: tag-дедуп по чату, автиклик открывает диалог.
+            showNativeNotification({
+              title: resolvedSender || formatDisplayPhone(cleanChatId),
+              body: newMsg.text,
+              icon: contactObj?.avatarUrl,
+              chatId: cleanChatId,
+              onClick: () => handleSelectChat(cleanChatId),
+            });
           }
         }
       }
@@ -1387,6 +1389,9 @@ export default function App() {
   // 10. Start or select chat
   const handleSelectChat = (chatId: string) => {
     setActiveChatId(chatId);
+    // Открытие чата гасит его системное уведомление и in-app карточку.
+    closeNativeNotificationsForChat(chatId);
+    setPopupNotification((prev) => (prev && prev.chatId === chatId ? null : prev));
     // Mark as read
     setDialogs((prev) =>
       prev.map((d) => (d.chatId === chatId ? { ...d, unreadCount: 0 } : d))
@@ -1767,25 +1772,16 @@ export default function App() {
   // Форсированный тест системного (OS-level) канала — bypass роутинга по фокусу.
   // Возвращает true, если уведомление реально показано.
   const handleTestBrowserNotification = useCallback((): boolean => {
-    if (typeof window === 'undefined' || !('Notification' in window)) return false;
-    if (Notification.permission !== 'granted') return false;
-    try {
-      const notif = new Notification('MAX Web Messenger', {
-        body:
-          lang === 'ru'
-            ? 'Тестовое системное уведомление рабочего стола'
-            : 'Test desktop system notification',
-        icon: '/favicon.svg',
-      });
-      notif.onclick = () => {
-        window.focus();
-        notif.close();
-      };
-      return true;
-    } catch (err) {
-      console.warn('Test browser notification error:', err);
-      return false;
-    }
+    const shown = showNativeNotification({
+      title: 'MAX Web Messenger',
+      body:
+        lang === 'ru'
+          ? 'Тестовое системное уведомление рабочего стола'
+          : 'Test desktop system notification',
+      icon: '/favicon.svg',
+      chatId: 'test',
+    });
+    return shown !== null;
   }, [lang]);
 
   return (

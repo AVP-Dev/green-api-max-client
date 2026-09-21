@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   SendHorizonal,
   ArrowLeft,
@@ -28,6 +28,7 @@ import {
   formatMessageTime,
   formatDateDivider,
 } from '../utils/formatters';
+import { getPresenceInfo } from '../utils/presence';
 import { Avatar } from './Avatar';
 import { MaxLogo } from './MaxLogo';
 import { ChatHistorySkeleton } from './Skeletons';
@@ -199,6 +200,26 @@ export const ChatView: React.FC<ChatViewProps> = ({
     ? formatDisplayPhone(chatId) 
     : chatId;
 
+  // Честный presence как в больших мессенджерах: пересчёт каждые 30 сек,
+  // чтобы «в сети» гасло, а «был(а) сегодня в HH:MM» обновлялось без релоада.
+  const [presenceNow, setPresenceNow] = useState(() => Date.now());
+  useEffect(() => {
+    setPresenceNow(Date.now());
+    const id = setInterval(() => setPresenceNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, [chatId]);
+
+  const presence = useMemo(
+    () =>
+      getPresenceInfo({
+        messages,
+        contactType: contact?.type,
+        lang,
+        nowMs: presenceNow,
+      }),
+    [messages, contact?.type, lang, presenceNow]
+  );
+
   const getFontSizeClass = () => {
     switch (settings?.fontSize) {
       case 'small':
@@ -320,10 +341,25 @@ export const ChatView: React.FC<ChatViewProps> = ({
                 </span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 mt-0.5 min-w-0 truncate">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/400 shrink-0"></span>
-                <span className="text-[11px] text-emerald-700 dark:text-emerald-300 font-medium truncate">
-                  {t.online} · {contact?.company || t.maxUser}
+              <div
+                className="flex items-center gap-1.5 mt-0.5 min-w-0 truncate"
+                title={presence.isUnknown ? undefined : t.presenceByActivityHint}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                    presence.isOnline
+                      ? 'bg-emerald-500'
+                      : 'bg-slate-300 dark:bg-slate-600'
+                  }`}
+                ></span>
+                <span
+                  className={`text-[11px] font-medium truncate ${
+                    presence.isOnline
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-slate-500 dark:text-slate-400'
+                  }`}
+                >
+                  {presence.text}
                 </span>
               </div>
             )}
