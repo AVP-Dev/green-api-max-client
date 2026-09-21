@@ -18,9 +18,10 @@ import {
   BookUser,
   UserPlus,
   RotateCw,
-  Edit2
+  Edit2,
+  Zap,
 } from 'lucide-react';
-import { AppSettings, ChatMessage, Contact, Language } from '../types';
+import { AppSettings, ChatMessage, Contact, Language, QuickReply } from '../types';
 import { translations } from '../i18n/translations';
 import {
   formatDisplayPhone,
@@ -50,6 +51,8 @@ interface ChatViewProps {
   onSendTyping?: (chatId: string) => void;
   onSyncHistory?: (chatId: string) => void;
   isSyncingHistory?: boolean;
+  quickReplies?: QuickReply[];
+  onOpenQuickReplies?: () => void;
 }
 
 export const ChatView: React.FC<ChatViewProps> = ({
@@ -72,6 +75,8 @@ export const ChatView: React.FC<ChatViewProps> = ({
   onSendTyping,
   onSyncHistory,
   isSyncingHistory = false,
+  quickReplies = [],
+  onOpenQuickReplies,
 }) => {
   const t = translations[lang];
   const [inputText, setInputText] = useState('');
@@ -522,22 +527,63 @@ export const ChatView: React.FC<ChatViewProps> = ({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Quick Template Chips (if messages exist) */}
-      {messages.length > 0 && (
-        <div className="px-4 py-1.5 bg-white/70 border-t border-slate-200/60 flex items-center gap-1.5 overflow-x-auto text-[11px] scrollbar-none">
-          <span className="text-slate-400 shrink-0 text-[10px] font-medium hidden sm:inline">
-            {t.quickPhrases}
-          </span>
-          {[t.quickPhrase1, t.quickPhrase2].map((phrase, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => handleSendQuickPhrase(phrase)}
-              className="shrink-0 px-2.5 py-1 bg-slate-100/80 hover:bg-indigo-50 text-slate-600 hover:text-[#471AFF] rounded-lg transition-colors cursor-pointer font-medium"
+      {/* Quick Replies Bar */}
+      {quickReplies && quickReplies.length > 0 && (
+        <div className="px-3 sm:px-4 py-1.5 bg-slate-50/90 border-t border-slate-200/60 flex items-center gap-1.5 overflow-x-auto text-[11px] scrollbar-none">
+          <button
+            type="button"
+            onClick={onOpenQuickReplies}
+            className="flex items-center gap-1 shrink-0 text-slate-500 hover:text-[#471AFF] transition-colors cursor-pointer mr-0.5"
+            title={t.manageQuickReplies}
+          >
+            <Zap className="w-3.5 h-3.5 text-[#471AFF] fill-[#471AFF]/20" />
+            <span className="text-[10px] font-semibold text-slate-500 hover:text-[#471AFF] hidden sm:inline">
+              {t.quickRepliesTitle}:
+            </span>
+          </button>
+
+          {quickReplies.map((qr) => (
+            <div
+              key={qr.id}
+              className="group shrink-0 inline-flex items-center rounded-lg bg-white border border-slate-200/80 hover:border-indigo-300 text-slate-700 hover:bg-indigo-50/50 transition-all shadow-2xs overflow-hidden"
             >
-              {phrase.slice(0, 24)}...
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setInputText(qr.text);
+                  inputRef.current?.focus();
+                }}
+                title={`${t.quickReplyInsert}: "${qr.text}"`}
+                className="px-2.5 py-1 text-left cursor-pointer flex items-center gap-1 text-[11px] hover:text-[#471AFF]"
+              >
+                <span className="font-semibold text-slate-800 group-hover:text-[#471AFF]">{qr.title}</span>
+                <span className="text-slate-400 group-hover:text-indigo-400 text-[10px] hidden md:inline max-w-[120px] truncate">
+                  · {qr.text}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSendQuickPhrase(qr.text)}
+                title={`${t.quickReplySend}: "${qr.text}"`}
+                className="px-1.5 py-1 border-l border-slate-200/60 hover:bg-[#471AFF] text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <SendHorizonal className="w-3 h-3" />
+              </button>
+            </div>
           ))}
+
+          {/* Quick Add / Manage Button */}
+          {onOpenQuickReplies && (
+            <button
+              type="button"
+              onClick={onOpenQuickReplies}
+              title={t.manageQuickReplies}
+              className="shrink-0 px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-[#471AFF] rounded-lg transition-colors cursor-pointer text-[10px] sm:text-[11px] font-semibold flex items-center gap-1 border border-indigo-100/80"
+            >
+              <Plus className="w-3 h-3" />
+              <span>{lang === 'ru' ? 'Настроить' : 'Manage'}</span>
+            </button>
+          )}
         </div>
       )}
 
@@ -562,6 +608,19 @@ export const ChatView: React.FC<ChatViewProps> = ({
               </button>
             </div>
             <div className="p-1 divide-y divide-slate-100 text-xs">
+              {onOpenQuickReplies && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpenQuickReplies();
+                    setShowMobileActions(false);
+                  }}
+                  className="w-full px-3 py-3 text-left text-slate-700 hover:bg-indigo-50 hover:text-[#471AFF] flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <Zap className="w-4 h-4 text-[#471AFF]" />
+                  <span className="font-medium">{t.quickRepliesTitle}</span>
+                </button>
+              )}
               {onSimulateTyping && chatId && (
                 <button
                   type="button"

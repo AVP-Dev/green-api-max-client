@@ -6,6 +6,7 @@ import {
   Language,
   AppSettings,
   Contact,
+  QuickReply,
 } from './types';
 import { AuthScreen } from './components/AuthScreen';
 import { Sidebar } from './components/Sidebar';
@@ -13,6 +14,7 @@ import { ChatView } from './components/ChatView';
 import { NewChatModal } from './components/NewChatModal';
 import { SettingsModal } from './components/SettingsModal';
 import { AddressBookModal } from './components/AddressBookModal';
+import { QuickRepliesModal, getDefaultQuickReplies } from './components/QuickRepliesModal';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { PopupNotification, PopupNotificationData } from './components/PopupNotification';
 import { useTabNotification } from './hooks/useTabNotification';
@@ -32,6 +34,7 @@ const STORAGE_KEYS = {
   SETTINGS: 'max_messenger_settings',
   CONTACTS: 'max_messenger_contacts',
   LAST_SYNC: 'max_messenger_last_sync',
+  QUICK_REPLIES: 'max_messenger_quick_replies',
 };
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -62,6 +65,8 @@ export default function App() {
     const saved = safeStorage.getItem(STORAGE_KEYS.LANG);
     return saved === 'en' ? 'en' : 'ru';
   });
+
+  const t = translations[lang];
 
   // 1.1 App Settings state
   const [settings, setSettings] = useState<AppSettings>(() => {
@@ -183,6 +188,23 @@ export default function App() {
   const [isSyncingContacts, setIsSyncingContacts] = useState(false);
   const [isAddressBookOpen, setIsAddressBookOpen] = useState(false);
 
+  // 5.2 Quick Replies (Шаблоны быстрых ответов)
+  const [quickReplies, setQuickReplies] = useState<QuickReply[]>(() => {
+    try {
+      const saved = safeStorage.getItem(STORAGE_KEYS.QUICK_REPLIES);
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // ignore
+    }
+    return getDefaultQuickReplies(lang);
+  });
+
+  useEffect(() => {
+    safeStorage.setItem(STORAGE_KEYS.QUICK_REPLIES, JSON.stringify(quickReplies));
+  }, [quickReplies]);
+
+  const [isQuickRepliesModalOpen, setIsQuickRepliesModalOpen] = useState(false);
+
   // Fast map lookup
   const contactsMap = useMemo(() => {
     const map = new Map<string, Contact>();
@@ -289,22 +311,50 @@ export default function App() {
     return dialogs.reduce((acc, d) => acc + (d.unreadCount || 0), 0);
   }, [dialogs]);
 
-  // Browser Tab Notification controller (Page title prefix + Dynamic badged Favicon)
+  // Window/tab focus tracking ref to reliably detect if user is looking at this tab
+  const isWindowFocusedRef = useRef<boolean>(true);
+  useEffect(() => {
+    const handleFocus = () => {
+      isWindowFocusedRef.current = true;
+    };
+    const handleBlur = () => {
+      isWindowFocusedRef.current = false;
+    };
+    const handleVisibility = () => {
+      isWindowFocusedRef.current = !document.hidden;
+    };
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
+
+  // Browser Tab Notification controller (Page title prefix + Dynamic Canvas badged Favicon)
   const { notifyNewIncoming } = useTabNotification({
     unreadCount: totalUnreadCount,
     baseTitle: 'MAX Web Messenger',
     lang,
   });
 
-  // When tab/window gains focus or becomes visible, mark active chat as read
+  // When tab/window gains focus, mark active chat as read with a short delay so user notices the unread count
   useEffect(() => {
+    let focusTimeout: any = null;
     const handleClearActiveUnread = () => {
       if (activeChatId) {
-        setDialogs((prev) =>
-          prev.map((d) =>
-            d.chatId === activeChatId && d.unreadCount > 0 ? { ...d, unreadCount: 0 } : d
-          )
-        );
+        if (focusTimeout) clearTimeout(focusTimeout);
+        focusTimeout = setTimeout(() => {
+          setDialogs((prev) =>
+            prev.map((d) =>
+              d.chatId === activeChatId && d.unreadCount > 0 ? { ...d, unreadCount: 0 } : d
+            )
+          );
+        }, 1500);
       }
     };
 
@@ -317,6 +367,7 @@ export default function App() {
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
+      if (focusTimeout) clearTimeout(focusTimeout);
       window.removeEventListener('focus', handleClearActiveUnread);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
@@ -622,6 +673,7 @@ export default function App() {
       const isDocumentActive =
         typeof document !== 'undefined' &&
         !document.hidden &&
+        isWindowFocusedRef.current &&
         (typeof document.hasFocus === 'function' ? document.hasFocus() : true);
       const isActivelyViewing = activeChatId === cleanChatId && isDocumentActive;
 
@@ -685,9 +737,10 @@ export default function App() {
           const contactObj = contacts.find((c) => c.id === cleanChatId);
           const resolvedSender = contactObj?.contactName || contactObj?.name || newMsg.senderName;
 
-          // Notify browser tab (flashing title if tab is inactive)
-          notifyNewIncoming(resolvedSender);
+          // Notify browser tab (flashing title if tab is inactive or new message)
+          notifyNewIncoming(resolvedSender, newMsg.text);
 
+          // In-app popup notification with high visibility
           setPopupNotification({
             id: newMsg.id,
             chatId: cleanChatId,
@@ -703,11 +756,11 @@ export default function App() {
               const displayTitle = resolvedSender || formatDisplayPhone(cleanChatId);
               const notif = new Notification(displayTitle, {
                 body: newMsg.text,
-                icon: contactObj?.avatarUrl || '/favicon.ico',
+                icon: contactObj?.avatarUrl || '/favicon.svg',
               });
               notif.onclick = () => {
                 window.focus();
-                setActiveChatId(cleanChatId);
+                handleSelectChat(cleanChatId);
                 notif.close();
               };
             } catch (err) {
@@ -735,14 +788,9 @@ export default function App() {
         );
       }
 
-      if (!newMsg.silent) {
-        showToast(
-          isIncoming
-            ? (lang === 'ru'
-                ? `Входящее сообщение от ${newMsg.senderName || '+' + cleanChatId}`
-                : `Incoming message from ${newMsg.senderName || '+' + cleanChatId}`)
-            : (lang === 'ru' ? 'Исходящее сообщение синхронизировано' : 'Outgoing message synchronized')
-        );
+      // Only show top sync toast for outgoing sync to avoid covering the incoming PopupNotification
+      if (!newMsg.silent && !isIncoming) {
+        showToast(lang === 'ru' ? 'Исходящее сообщение синхронизировано' : 'Outgoing message synchronized');
       }
 
       return true;
@@ -1375,12 +1423,52 @@ export default function App() {
 
   const activeDialog = dialogs.find((d) => d.chatId === activeChatId);
 
+  const handleTestNotification = () => {
+    if (settings.soundEnabled) {
+      playNotificationSound();
+    }
+
+    notifyNewIncoming(
+      lang === 'ru' ? 'MAX Ассистент' : 'MAX Assistant',
+      lang === 'ru' ? 'Тестовое входящее сообщение' : 'Test incoming message'
+    );
+
+    setPopupNotification({
+      id: `test_${Date.now()}`,
+      chatId: '79991234567',
+      senderName: lang === 'ru' ? 'MAX Ассистент' : 'MAX Assistant',
+      text:
+        lang === 'ru'
+          ? 'Привет! Всплывающее уведомление и бейдж на вкладке работают отлично!'
+          : 'Hello! Visual popup notification and tab badge are working great!',
+      timestamp: Date.now(),
+    });
+
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        const notif = new Notification('MAX Web Messenger', {
+          body:
+            lang === 'ru'
+              ? 'Тестовое системное уведомление рабочего стола'
+              : 'Test system notification',
+          icon: '/favicon.svg',
+        });
+        notif.onclick = () => {
+          window.focus();
+          notif.close();
+        };
+      } catch (err) {
+        console.warn('Test notification error:', err);
+      }
+    }
+  };
+
   return (
     <div className="fixed inset-0 w-full h-full flex overflow-hidden bg-white select-none font-sans">
-      {/* Toast Notification */}
+      {/* Toast Notification (centered at top so it never overlaps right-side PopupNotification) */}
       {toastMessage && (
-        <div className="fixed top-4 right-4 z-50 bg-slate-900 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg border border-slate-700 animate-in fade-in slide-in-from-top-2 duration-200">
-          {toastMessage}
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[10000] bg-slate-900/95 backdrop-blur-md text-white text-xs font-medium px-4 py-2 rounded-full shadow-xl border border-slate-700/80 animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-none flex items-center gap-2">
+          <span>{toastMessage}</span>
         </div>
       )}
 
@@ -1462,6 +1550,8 @@ export default function App() {
             onSendTyping={handleSendTyping}
             onSyncHistory={(cid) => syncChatHistory(cid)}
             isSyncingHistory={isSyncingChatHistory}
+            quickReplies={quickReplies}
+            onOpenQuickReplies={() => setIsQuickRepliesModalOpen(true)}
           />
         </div>
       </div>
@@ -1507,6 +1597,24 @@ export default function App() {
         activeChatId={activeChatId}
         onSyncMessages={() => syncRecentMessages(true)}
         isSyncingMessages={isSyncingMessages}
+        onOpenQuickReplies={() => setIsQuickRepliesModalOpen(true)}
+        quickRepliesCount={quickReplies.length}
+        onTestNotification={handleTestNotification}
+      />
+
+      {/* Quick Replies Management Modal (Создание, редактирование и удаление шаблонов) */}
+      <QuickRepliesModal
+        isOpen={isQuickRepliesModalOpen}
+        onClose={() => setIsQuickRepliesModalOpen(false)}
+        quickReplies={quickReplies}
+        onSaveQuickReplies={(updated) => {
+          setQuickReplies(updated);
+          showToast(t.quickRepliesSaved);
+        }}
+        onSelectQuickReply={(text) => {
+          handleSendMessage(text);
+        }}
+        lang={lang}
       />
 
       {/* Popup Notification for Incoming Messages */}

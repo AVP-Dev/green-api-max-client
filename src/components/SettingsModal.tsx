@@ -22,6 +22,10 @@ import {
   Wrench,
   Layers,
   Code2,
+  Zap,
+  MessageSquare,
+  Sparkles,
+  ShieldCheck,
 } from 'lucide-react';
 import { AppSettings, GreenApiCredentials, Language, ChatDialog, ChatMessage } from '../types';
 import { translations } from '../i18n/translations';
@@ -45,6 +49,9 @@ interface SettingsModalProps {
   activeChatId?: string | null;
   onSyncMessages?: () => Promise<number>;
   isSyncingMessages?: boolean;
+  onOpenQuickReplies?: () => void;
+  quickRepliesCount?: number;
+  onTestNotification?: () => void;
 }
 
 type TabType = 'chat' | 'notifications' | 'connection' | 'integration' | 'data';
@@ -65,6 +72,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   activeChatId,
   onSyncMessages,
   isSyncingMessages = false,
+  onOpenQuickReplies,
+  quickRepliesCount,
+  onTestNotification,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('chat');
   const [checkingStatus, setCheckingStatus] = useState(false);
@@ -73,6 +83,32 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [confirmClearAll, setConfirmClearAll] = useState(false);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const [isPlayingSound, setIsPlayingSound] = useState(false);
+  const [browserPermission, setBrowserPermission] = useState<'default' | 'granted' | 'denied' | 'unsupported'>('default');
+  const [testNotifSuccess, setTestNotifSuccess] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if ('Notification' in window) {
+        setBrowserPermission(Notification.permission);
+      } else {
+        setBrowserPermission('unsupported');
+      }
+    }
+  }, [isOpen]);
+
+  const handleRequestBrowserPermission = async () => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      try {
+        const result = await Notification.requestPermission();
+        setBrowserPermission(result);
+        if (result === 'granted' && onTestNotification) {
+          onTestNotification();
+        }
+      } catch (err) {
+        console.warn('Failed to request permission:', err);
+      }
+    }
+  };
 
   // Connection & Gateway editing state
   const [editIdInstance, setEditIdInstance] = useState(creds?.idInstance || '');
@@ -585,47 +621,189 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     />
                   </label>
                 </div>
+
+                {/* Quick Replies / Templates section */}
+                {onOpenQuickReplies && (
+                  <div className="pt-3 border-t border-slate-100">
+                    <div className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-indigo-50/50 border border-indigo-100/80">
+                      <div className="flex items-start gap-3 min-w-0">
+                        <div className="w-8 h-8 rounded-xl bg-indigo-100 text-[#471AFF] flex items-center justify-center shrink-0 mt-0.5">
+                          <Zap className="w-4 h-4 fill-[#471AFF]/20" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-800">
+                              {t.quickRepliesTitle}
+                            </span>
+                            {typeof quickRepliesCount === 'number' && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-white text-[#471AFF] font-bold border border-indigo-200">
+                                {quickRepliesCount}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-0.5 truncate sm:whitespace-normal">
+                            {t.quickRepliesSubtitle}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          onOpenQuickReplies();
+                        }}
+                        className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#471AFF] text-white hover:bg-indigo-700 transition-colors shrink-0 cursor-pointer shadow-2xs"
+                      >
+                        {lang === 'ru' ? 'Настроить' : 'Configure'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
             {/* 2. Sound & Notifications */}
             {activeTab === 'notifications' && (
-              <div className="space-y-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1 pr-2">
-                    <span className="text-xs font-semibold text-slate-700 block break-words">
-                      {t.soundNotificationsLabel}
-                    </span>
-                    <span className="text-xs text-slate-500 block mt-0.5 break-words">
-                      {t.soundNotificationsDesc}
-                    </span>
+              <div className="space-y-6">
+                {/* Sound Alerts */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3.5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1 pr-2">
+                      <span className="text-xs font-bold text-slate-800 block break-words flex items-center gap-1.5">
+                        <Volume2 className="w-4 h-4 text-[#471AFF]" />
+                        <span>{t.soundNotificationsLabel}</span>
+                      </span>
+                      <span className="text-xs text-slate-500 block mt-1 break-words">
+                        {t.soundNotificationsDesc}
+                      </span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={settings.soundEnabled}
+                      onChange={(e) => onUpdateSettings({ ...settings, soundEnabled: e.target.checked })}
+                      className="mt-0.5 rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer shrink-0"
+                    />
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={settings.soundEnabled}
-                    onChange={(e) => onUpdateSettings({ ...settings, soundEnabled: e.target.checked })}
-                    className="mt-0.5 rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer shrink-0"
-                  />
+
+                  <div className="pt-3 border-t border-slate-200 flex items-center justify-between gap-3">
+                    <span className="text-xs text-slate-600">
+                      {isRu ? 'Проверка воспроизведения звука' : 'Test sound playback'}
+                    </span>
+                    <button
+                      id="test-sound-button"
+                      type="button"
+                      onClick={handleTestSound}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                        isPlayingSound
+                          ? 'bg-[#471AFF] text-white shadow-xs'
+                          : 'bg-white text-[#471AFF] hover:bg-indigo-50 border border-indigo-200 shadow-2xs'
+                      }`}
+                    >
+                      <Volume2 className={`w-3.5 h-3.5 ${isPlayingSound ? 'animate-bounce' : ''}`} />
+                      <span>{isPlayingSound ? (isRu ? 'Звучит...' : 'Playing...') : t.testSoundBtn}</span>
+                    </button>
+                  </div>
                 </div>
 
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
-                  <div className="flex items-center space-x-2 text-xs text-slate-600 min-w-0">
-                    <Volume2 className={`w-4 h-4 text-slate-400 shrink-0 ${isPlayingSound ? 'text-[#471AFF] scale-110' : ''}`} />
-                    <span className="truncate">{t.testSoundBtn}</span>
+                {/* Visual Popup & Tab Badging Section */}
+                <div className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100/90 space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <Bell className="w-4 h-4 text-[#471AFF]" />
+                        <h4 className="text-xs font-bold text-slate-800">
+                          {isRu ? 'Всплывающие уведомления и индикатор на вкладке' : 'Popup Notifications & Tab Badge'}
+                        </h4>
+                      </div>
+
+                      {/* Permission status badge */}
+                      {browserPermission === 'granted' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          <Check className="w-3 h-3 text-emerald-600" />
+                          <span>{isRu ? 'Разрешены' : 'Granted'}</span>
+                        </span>
+                      )}
+                      {browserPermission === 'default' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                          <AlertTriangle className="w-3 h-3 text-amber-600" />
+                          <span>{isRu ? 'Требуется разрешение' : 'Permission needed'}</span>
+                        </span>
+                      )}
+                      {browserPermission === 'denied' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                          <X className="w-3 h-3 text-rose-600" />
+                          <span>{isRu ? 'Заблокированы' : 'Blocked'}</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-xs text-slate-500 mt-1">
+                      {isRu
+                        ? 'При входящих сообщениях отображается всплывающая карточка в правом верхнем углу, динамическая красная точка/счётчик на иконке вкладки и системное уведомление.'
+                        : 'Displays an interactive popup card in the top-right corner, a dynamic red badge on the tab favicon, and system desktop notifications.'}
+                    </p>
                   </div>
-                  <button
-                    id="test-sound-button"
-                    type="button"
-                    onClick={handleTestSound}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
-                      isPlayingSound
-                        ? 'bg-[#471AFF] text-white shadow-xs'
-                        : 'bg-indigo-50 text-[#471AFF] hover:bg-indigo-100 border border-indigo-100'
-                    }`}
-                  >
-                    <Volume2 className={`w-3.5 h-3.5 ${isPlayingSound ? 'animate-bounce' : ''}`} />
-                    <span>{isPlayingSound ? (isRu ? 'Звучит...' : 'Playing...') : t.testSoundBtn}</span>
-                  </button>
+
+                  {/* Permission request action if default */}
+                  {browserPermission === 'default' && (
+                    <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white border border-amber-200">
+                      <div className="text-[11px] text-slate-600">
+                        {isRu
+                          ? 'Разрешите всплывающие системные уведомления для фоновых оповещений'
+                          : 'Allow system notifications for background message alerts'}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRequestBrowserPermission}
+                        className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#471AFF] text-white hover:bg-indigo-700 transition-colors shrink-0 cursor-pointer shadow-xs"
+                      >
+                        {isRu ? 'Включить в браузере' : 'Enable in browser'}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Tip if denied */}
+                  {browserPermission === 'denied' && (
+                    <div className="p-3 rounded-xl bg-rose-50/70 border border-rose-200 text-[11px] text-rose-700 space-y-1">
+                      <p className="font-semibold">
+                        {isRu ? 'Уведомления заблокированы в браузере' : 'Notifications blocked by browser'}
+                      </p>
+                      <p>
+                        {isRu
+                          ? 'Нажмите на значок настроек сайта в левой части адресной строки браузера и переключите «Уведомления» в положение «Разрешить».'
+                          : 'Click the site settings lock icon in the browser URL address bar and allow "Notifications".'}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Interactive Test Button */}
+                  <div className="pt-2 border-t border-indigo-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+                    <div className="text-[11px] text-slate-600">
+                      {isRu
+                        ? 'Протестируйте всплывающее окно, смену заголовка и бейдж на вкладке:'
+                        : 'Test the in-app popup notification and tab badge:'}
+                    </div>
+
+                    <button
+                      id="test-notification-button"
+                      type="button"
+                      onClick={() => {
+                        if (onTestNotification) {
+                          onTestNotification();
+                          setTestNotifSuccess(true);
+                          setTimeout(() => setTestNotifSuccess(false), 4000);
+                        }
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white text-[#471AFF] hover:bg-indigo-50 border border-indigo-200 transition-all cursor-pointer shadow-2xs flex items-center gap-1.5 shrink-0"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-[#471AFF]" />
+                      <span>
+                        {testNotifSuccess
+                          ? (isRu ? 'Уведомление отправлено!' : 'Notification sent!')
+                          : (isRu ? 'Проверить всплывающее уведомление' : 'Test popup notification')}
+                      </span>
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

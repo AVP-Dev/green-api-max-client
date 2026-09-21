@@ -6,64 +6,177 @@ interface TabNotificationOptions {
   lang?: 'ru' | 'en';
 }
 
-function generateBadgedFaviconSvg(count: number): string {
-  const badgeText = count > 9 ? '9+' : String(count);
-  const fontSize = count > 9 ? '80' : '105';
-  const textY = count > 9 ? '120' : '128';
+/**
+ * Draws a high-contrast PNG favicon with brand gradient and vivid red badge or dot.
+ * Using HTML5 Canvas to PNG data URI guarantees 100% compatibility across Chrome, Safari, Edge, and Firefox.
+ */
+function generateBadgedFaviconPng(count: number): string {
+  if (typeof document === 'undefined') return '';
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
-  <defs>
-    <linearGradient id="maxBrandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00BFFF" />
-      <stop offset="48%" stop-color="#471AFF" />
-      <stop offset="100%" stop-color="#9500FF" />
-    </linearGradient>
-    <filter id="subtleGlow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#471AFF" flood-opacity="0.35" />
-    </filter>
-  </defs>
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return '';
 
-  <path
-    d="M 120 40 C 220 36, 292 36, 392 40 C 454 44, 476 66, 480 128 C 484 220, 484 292, 480 384 C 476 446, 454 468, 392 472 C 310 476, 240 476, 172 472 C 142 470, 96 496, 52 506 C 42 508, 36 502, 40 492 C 52 460, 62 432, 56 408 C 34 374, 28 320, 32 256 C 28 174, 34 116, 56 82 C 72 58, 92 44, 120 40 Z"
-    fill="url(#maxBrandGradient)"
-    filter="url(#subtleGlow)"
-  />
+  // 1. Draw rounded brand background
+  const radius = 16;
+  const grad = ctx.createLinearGradient(0, 0, 64, 64);
+  grad.addColorStop(0, '#00BFFF');
+  grad.addColorStop(0.5, '#471AFF');
+  grad.addColorStop(1, '#9500FF');
 
-  <path
-    d="M 148 356 L 148 168 C 148 155, 158 146, 172 146 L 204 146 C 214 146, 224 152, 230 162 L 256 208 L 282 162 C 288 152, 298 146, 308 146 L 340 146 C 354 146, 364 155, 364 168 L 364 356 C 364 366, 356 374, 346 374 L 316 374 C 306 374, 298 366, 298 356 L 298 238 L 272 284 C 266 294, 252 298, 242 292 C 239 290, 237 287, 235 284 L 214 238 L 214 356 C 214 366, 206 374, 196 374 L 166 374 C 156 374, 148 366, 148 356 Z"
-    fill="#FFFFFF"
-  />
+  ctx.beginPath();
+  ctx.moveTo(radius, 0);
+  ctx.lineTo(64 - radius, 0);
+  ctx.quadraticCurveTo(64, 0, 64, radius);
+  ctx.lineTo(64, 64 - radius);
+  ctx.quadraticCurveTo(64, 64, 64 - radius, 64);
+  ctx.lineTo(radius, 64);
+  ctx.quadraticCurveTo(0, 64, 0, 64 - radius);
+  ctx.lineTo(0, radius);
+  ctx.quadraticCurveTo(0, 0, radius, 0);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
 
-  <!-- High-contrast Red Notification Badge with White Ring -->
-  <g>
-    <circle cx="395" cy="95" r="92" fill="#EF4444" stroke="#FFFFFF" stroke-width="26" />
-    <text x="395" y="${textY}" font-family="system-ui, -apple-system, 'SF Pro Display', Roboto, sans-serif" font-size="${fontSize}" font-weight="900" fill="#FFFFFF" text-anchor="middle">${badgeText}</text>
-  </g>
-</svg>`;
+  // 2. Draw white 'M' monogram in the center
+  ctx.fillStyle = '#FFFFFF';
+  ctx.beginPath();
+  // Simplified stylized M monogram
+  ctx.moveTo(16, 46);
+  ctx.lineTo(16, 18);
+  ctx.lineTo(24, 18);
+  ctx.lineTo(32, 34);
+  ctx.lineTo(40, 18);
+  ctx.lineTo(48, 18);
+  ctx.lineTo(48, 46);
+  ctx.lineTo(41, 46);
+  ctx.lineTo(41, 28);
+  ctx.lineTo(34, 42);
+  ctx.lineTo(30, 42);
+  ctx.lineTo(23, 28);
+  ctx.lineTo(23, 46);
+  ctx.closePath();
+  ctx.fill();
 
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  // 3. If count > 0, draw high-visibility Red Badge / Dot on top-right
+  if (count > 0) {
+    const isLarge = count > 9;
+    const badgeText = count > 99 ? '99+' : String(count);
+
+    if (isLarge) {
+      // Pill badge for numbers 10+
+      const pillW = count > 99 ? 34 : 28;
+      const pillH = 22;
+      const pillX = 64 - pillW - 2;
+      const pillY = 2;
+      const pillR = 11;
+
+      // Outer white ring
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(pillX - 2, pillY - 2, pillW + 4, pillH + 4, pillR + 2) : ctx.rect(pillX - 2, pillY - 2, pillW + 4, pillH + 4);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fill();
+
+      // Red fill
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(pillX, pillY, pillW, pillH, pillR) : ctx.rect(pillX, pillY, pillW, pillH);
+      ctx.fillStyle = '#EF4444';
+      ctx.fill();
+
+      // Badge number text
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 12px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(badgeText, pillX + pillW / 2, pillY + pillH / 2 + 1);
+    } else {
+      // Circle badge for 1-9
+      const cx = 48;
+      const cy = 16;
+      const r = 14;
+
+      // Outer white ring
+      ctx.beginPath();
+      ctx.arc(cx, cy, r + 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fill();
+
+      // Red badge
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fillStyle = '#EF4444';
+      ctx.fill();
+
+      // Badge number text
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '900 15px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(badgeText, cx, cy + 1);
+    }
+  }
+
+  return canvas.toDataURL('image/png');
 }
 
 /**
- * Updates the favicon in the browser tab to show an unread badge or default icon
+ * Updates the favicon in the browser tab to show an unread badge or restore default
  */
 function updateTabFavicon(count: number) {
   if (typeof document === 'undefined') return;
 
-  let link = document.querySelector<HTMLLinkElement>("link[rel='icon']");
-  if (!link) {
-    link = document.createElement('link');
-    link.rel = 'icon';
-    document.head.appendChild(link);
-  }
+  try {
+    const allFavicons = document.querySelectorAll<HTMLLinkElement>(
+      "link[rel*='icon']"
+    );
 
-  if (count <= 0) {
-    link.type = 'image/svg+xml';
-    link.href = '/favicon.svg';
-  } else {
-    const dataUri = generateBadgedFaviconSvg(count);
-    link.type = 'image/svg+xml';
-    link.href = dataUri;
+    if (count <= 0) {
+      // Remove dynamic icon
+      const dynamicIcons = document.querySelectorAll<HTMLLinkElement>("link[data-dynamic-favicon='true']");
+      dynamicIcons.forEach((el) => el.remove());
+
+      // Restore original icons
+      allFavicons.forEach((el) => {
+        if (el.dataset.origHref) {
+          el.href = el.dataset.origHref;
+          delete el.dataset.origHref;
+        }
+        if (el.dataset.origType) {
+          el.type = el.dataset.origType;
+          delete el.dataset.origType;
+        }
+      });
+    } else {
+      const dataUri = generateBadgedFaviconPng(count);
+      if (!dataUri) return;
+
+      // Update ALL existing favicon links (including alternate icon and svg icon)
+      allFavicons.forEach((el) => {
+        if (!el.dataset.origHref) {
+          el.dataset.origHref = el.href;
+        }
+        if (!el.dataset.origType && el.type) {
+          el.dataset.origType = el.type;
+        }
+        el.type = 'image/png';
+        el.href = dataUri;
+      });
+
+      // Also ensure a primary dynamic link is present
+      let dynamicLink = document.querySelector<HTMLLinkElement>("link[data-dynamic-favicon='true']");
+      if (!dynamicLink) {
+        dynamicLink = document.createElement('link');
+        dynamicLink.rel = 'icon';
+        dynamicLink.type = 'image/png';
+        dynamicLink.setAttribute('data-dynamic-favicon', 'true');
+        document.head.appendChild(dynamicLink);
+      }
+      dynamicLink.href = dataUri;
+    }
+  } catch (err) {
+    console.warn('Failed to update tab favicon:', err);
   }
 }
 
@@ -75,17 +188,13 @@ export function useTabNotification({
   baseTitle = 'MAX Web Messenger',
   lang = 'ru',
 }: TabNotificationOptions) {
-  const [lastSender, setLastSender] = useState<string | null>(null);
-  const isDocumentVisibleRef = useRef<boolean>(
-    typeof document !== 'undefined' ? !document.hidden : true
-  );
+  const [alertDetails, setAlertDetails] = useState<{ sender: string; text?: string } | null>(null);
   const flashStepRef = useRef<number>(0);
 
-  // Trigger an unread message alert (flashing tab title when user is on another tab)
-  const notifyNewIncoming = useCallback((senderName?: string) => {
-    if (typeof document !== 'undefined' && document.hidden) {
-      setLastSender(senderName || (lang === 'ru' ? 'Новое сообщение' : 'New message'));
-    }
+  // Trigger an unread message alert (flashing tab title)
+  const notifyNewIncoming = useCallback((senderName?: string, previewText?: string) => {
+    const sender = senderName || (lang === 'ru' ? 'Новое сообщение' : 'New message');
+    setAlertDetails({ sender, text: previewText });
   }, [lang]);
 
   // Update favicon whenever unreadCount changes
@@ -96,70 +205,69 @@ export function useTabNotification({
     };
   }, [unreadCount]);
 
-  // Handle visibility change and title blinking/updates
+  // Listen for user window focus to clear active alert
   useEffect(() => {
     if (typeof document === 'undefined') return;
 
-    const handleVisibilityChange = () => {
-      const isVisible = !document.hidden;
-      isDocumentVisibleRef.current = isVisible;
-      if (isVisible) {
-        // Tab gained focus - stop flashing sender name
-        setLastSender(null);
-      }
-    };
-
     const handleFocus = () => {
-      isDocumentVisibleRef.current = true;
-      setLastSender(null);
+      // Delay clearing alert slightly so user has a moment to notice
+      setTimeout(() => {
+        setAlertDetails(null);
+      }, 1000);
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        setTimeout(() => {
+          setAlertDetails(null);
+        }, 1000);
+      }
+    });
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
     };
   }, []);
 
-  // Timer for alternating title when hidden with a new incoming message
+  // Title flashing & unread count synchronization
   useEffect(() => {
     if (typeof document === 'undefined') return;
 
-    // When no unread messages, keep pristine base title
-    if (unreadCount <= 0) {
+    // No unread messages: show default title
+    if (unreadCount <= 0 && !alertDetails) {
       document.title = baseTitle;
       return;
     }
 
-    const unreadPrefix = `(${unreadCount > 99 ? '99+' : unreadCount})`;
+    const unreadCountNum = Math.max(unreadCount, alertDetails ? 1 : 0);
+    const unreadBadge = `(${unreadCountNum > 99 ? '99+' : unreadCountNum})`;
 
-    // If tab is focused OR no incoming sender alert, show standard static title: "(X) MAX Web Messenger"
-    if (!lastSender || !document.hidden) {
-      document.title = `${unreadPrefix} ${baseTitle}`;
+    // If tab is focused and no incoming alert, show steady "(1) MAX Web Messenger"
+    if (!alertDetails) {
+      document.title = `${unreadBadge} ${baseTitle}`;
       return;
     }
 
-    // If tab is in background and there's a new message, alternate title to catch user's eye
-    const displaySender = lastSender.length > 20 ? `${lastSender.slice(0, 18)}…` : lastSender;
-    const alertTitle = `💬 ${displaySender}!`;
-    const standardTitle = `${unreadPrefix} ${baseTitle}`;
+    // When there's a fresh incoming message alert, alternate title to catch attention
+    const sender = alertDetails.sender;
+    const shortSender = sender.length > 18 ? `${sender.slice(0, 16)}…` : sender;
+    const titleA = `🔴 ${unreadBadge} ${shortSender}: ${lang === 'ru' ? 'сообщение' : 'message'}`;
+    const titleB = `💬 ${unreadBadge} ${baseTitle}`;
+
+    document.title = titleA;
 
     const intervalId = setInterval(() => {
       flashStepRef.current = (flashStepRef.current + 1) % 2;
-      document.title = flashStepRef.current === 0 ? alertTitle : standardTitle;
-    }, 1500);
-
-    // Initial display
-    document.title = alertTitle;
+      document.title = flashStepRef.current === 0 ? titleA : titleB;
+    }, 1200);
 
     return () => {
       clearInterval(intervalId);
-      // Restore on cleanup or when sender clears
-      document.title = unreadCount > 0 ? `${unreadPrefix} ${baseTitle}` : baseTitle;
+      document.title = unreadCount > 0 ? `${unreadBadge} ${baseTitle}` : baseTitle;
     };
-  }, [unreadCount, baseTitle, lastSender]);
+  }, [unreadCount, baseTitle, alertDetails, lang]);
 
   return { notifyNewIncoming };
 }
+

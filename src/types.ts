@@ -149,3 +149,11 @@ export interface AppSettings {
   fontSize: 'small' | 'medium' | 'large';
   showPhoneFormatting: boolean;
 }
+
+export interface QuickReply {
+  id: string;
+  title: string;
+  text: string;
+  createdAt?: number;
+}
+
