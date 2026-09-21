@@ -65,6 +65,8 @@ interface SettingsModalProps {
   onUpdateCredsPersistence?: (persistent: boolean) => void;
   /** Импорт бэкапа (plain JSON или шифрованный). Слияние с дедупликацией — в App. */
   onImportBackup?: (dialogs: ChatDialog[], messages: ChatMessage[]) => void;
+  /** Последний тип вебхука из очереди (live-диагностика long-poll). */
+  lastWebhookType?: string | null;
 }
 
 type TabType = 'chat' | 'notifications' | 'connection' | 'integration' | 'data';
@@ -92,6 +94,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   credsPersistent = true,
   onUpdateCredsPersistence,
   onImportBackup,
+  lastWebhookType = null,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('chat');
   const [checkingStatus, setCheckingStatus] = useState(false);
@@ -1371,6 +1374,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         {opt.label}
                       </button>
                     ))}
+                  </div>
+                </div>
+
+                {/* Live очередь: последний вебхук + честно про typing */}
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-[11px] text-slate-600 dark:text-slate-300 space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold text-slate-700 dark:text-slate-200">
+                        {lang === 'ru' ? 'Последний вебхук из очереди:' : 'Last webhook from queue:'}
+                      </span>
+                      <span className="font-mono text-[#471AFF] dark:text-indigo-300 break-all text-right">
+                        {lastWebhookType || (lang === 'ru' ? '— пока тихо' : '— quiet so far')}
+                      </span>
+                    </div>
+                    <p className="leading-relaxed">
+                      {lang === 'ru'
+                        ? '«Собеседник печатает» из сети прийти не может: в GREEN-API нет входящего typing-события (только исходящий sendTyping). Индикатор в шапке чата работает, проверить можно пунктом «Тест: собеседник печатает» в меню ⋮.'
+                        : '“Interlocutor is typing” cannot arrive from the network: GREEN-API has no incoming typing event (only outgoing sendTyping). The header indicator works — verify via “Test: typing indicator” in the ⋮ menu.'}
+                    </p>
                   </div>
                 </div>
 

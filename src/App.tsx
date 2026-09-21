@@ -1232,7 +1232,7 @@ export default function App() {
   }, [settings.autoLockMinutes, !!creds]);
 
   // 8. Long-polling engine initialization
-  const { status: pollingStatus, lastReceiptId, errorMessage: pollingErrorMessage, retry: retryPolling } = useGreenApiPolling({
+  const { status: pollingStatus, lastReceiptId, lastWebhookType, errorMessage: pollingErrorMessage, retry: retryPolling } = useGreenApiPolling({
     creds,
     enabled: !!creds,
     pollingIntervalMs: settings.pollingIntervalMs,
@@ -1936,6 +1936,7 @@ export default function App() {
             quickRepliesCount={quickReplies.length}
             onTestNotification={handleTestNotification}
             onTestBrowserNotification={handleTestBrowserNotification}
+            lastWebhookType={lastWebhookType}
             credsPersistent={credsPersistent}
             onUpdateCredsPersistence={handleUpdateCredsPersistence}
             onImportBackup={handleImportBackup}

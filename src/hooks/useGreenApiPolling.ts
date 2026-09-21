@@ -3,6 +3,7 @@ import { GreenApiCredentials, GreenApiLooseBody, PollingStatus } from '../types'
 import { GreenApiService } from '../services/greenApi';
 import { sanitizePhone } from '../utils/formatters';
 import { parseNotification } from '../utils/greenApiSchemas';
+import { extractTypingInfo } from '../utils/typing';
 import { DEFAULT_POLLING_MS } from '../config';
 
 interface UseGreenApiPollingOptions {
@@ -20,6 +21,8 @@ interface UseGreenApiPollingOptions {
   }) => void;
   onTyping?: (data: { chatId: string; isTyping: boolean }) => void;
   onReceiptAcknowledged?: (receiptId: number) => void;
+  /** Вызывается на каждое полученное уведомление (для диагностики: тип вебхука). */
+  onNotification?: (typeWebhook: string, receiptId: number) => void;
 }
 
 export function useGreenApiPolling({
@@ -29,10 +32,12 @@ export function useGreenApiPolling({
   onIncomingMessage,
   onTyping,
   onReceiptAcknowledged,
+  onNotification,
 }: UseGreenApiPollingOptions) {
   const [status, setStatus] = useState<PollingStatus>('idle');
   const [lastPollTime, setLastPollTime] = useState<number | null>(null);
   const [lastReceiptId, setLastReceiptId] = useState<number | null>(null);
+  const [lastWebhookType, setLastWebhookType] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [pollCount, setPollCount] = useState<number>(0);
 
@@ -48,6 +53,9 @@ export function useGreenApiPolling({
 
   const ackReceiptRef = useRef(onReceiptAcknowledged);
   ackReceiptRef.current = onReceiptAcknowledged;
+
+  const notificationRef = useRef(onNotification);
+  notificationRef.current = onNotification;
 
   useEffect(() => {
     if (!creds?.idInstance || !creds?.apiTokenInstance || !enabled) {
@@ -97,6 +105,13 @@ export function useGreenApiPolling({
           const rawBody = (body || {}) as GreenApiLooseBody;
 
           const rawTypeWebhook = rawBody.typeWebhook || '';
+          // Видимость очереди для диагностики (DevTools + панель «Шлюз и связь»):
+          // какой тип вебхука реально приехал последним.
+          setLastWebhookType(rawTypeWebhook || '(без типа)');
+          notificationRef.current?.(rawTypeWebhook || '', receiptId);
+          if (typeof console !== 'undefined' && typeof console.debug === 'function') {
+            console.debug('[poll] webhook:', rawTypeWebhook || '(без типа)', `#${receiptId}`);
+          }
           const typeWebhookLower = rawTypeWebhook.toLowerCase();
           const bodyTypeLower = String(rawBody.type || '').toLowerCase();
 
@@ -199,54 +214,12 @@ export function useGreenApiPolling({
             }
           }
 
-          // 2b. Incoming Typing & Presence Notifications
-          if (body) {
-            const typeWebhookLower = (body.typeWebhook || '').toLowerCase();
-            const isPresenceOrTypingWebhook =
-              typeWebhookLower.includes('presence') ||
-              typeWebhookLower.includes('typing');
-
-            const rawChat =
-              body.chatId ||
-              body.presenceData?.chatId ||
-              body.chatData?.chatId ||
-              body.senderData?.chatId ||
-              body.senderData?.sender ||
-              '';
-            const cleanPresenceChatId = sanitizePhone(rawChat);
-
-            const presenceVal = String(
-              body.presence ||
-              body.presenceData?.presence ||
-              body.status ||
-              body.state ||
-              ''
-            ).toLowerCase();
-
-            if (
-              cleanPresenceChatId &&
-              (isPresenceOrTypingWebhook ||
-                presenceVal.includes('typing') ||
-                presenceVal.includes('composing') ||
-                presenceVal.includes('recording'))
-            ) {
-              const isTypingNow =
-                presenceVal === 'typing' ||
-                presenceVal === 'composing' ||
-                presenceVal === 'recording' ||
-                presenceVal === 'recording_audio' ||
-                typeWebhookLower.includes('typing') ||
-                (isPresenceOrTypingWebhook &&
-                  presenceVal !== 'paused' &&
-                  presenceVal !== 'stop' &&
-                  presenceVal !== 'available' &&
-                  presenceVal !== 'offline');
-
-              typingRef.current?.({
-                chatId: cleanPresenceChatId,
-                isTyping: isTypingNow,
-              });
-            }
+          // 2b. Incoming Typing & Presence Notifications.
+          // NB: GREEN-API не шлёт presence-вебхуки (официальный список типов их
+          // не содержит) — ветка заделом на будущее; см. utils/typing.ts.
+          const typingInfo = extractTypingInfo(rawBody);
+          if (typingInfo) {
+            typingRef.current?.(typingInfo);
           }
 
           // 3. Immediately acknowledge (delete notification) to keep queue flowing
@@ -310,6 +283,7 @@ export function useGreenApiPolling({
     status,
     lastPollTime,
     lastReceiptId,
+    lastWebhookType,
     errorMessage,
     pollCount,
     retry: () => retryTriggerRef.current?.(),

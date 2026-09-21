@@ -135,6 +135,10 @@ The repository is configured with a strict GitHub Actions workflow located at `.
 - **Preventing Queue Deadlock:** Until the notification is explicitly deleted via `deleteNotification(credentials, receiptId)`, subsequent incoming messages remain queued behind it.
 - **Immediate Acknowledgment:** The client processes `incomingMessageReceived` payloads, updates local dialogue state, and immediately invokes `deleteNotification`. Auxiliary events (typing indicators, status updates, system events) are also acknowledged immediately to keep the queue healthy and unblocked.
 
+### 3. Typing Indicators (`sendTyping` / presence)
+- **Outgoing typing works:** while typing, the client sends `sendTyping` (`{ chatId, typingTime: 5000 }`, plain numeric first with `@c.us` fallback per official docs).
+- **Incoming typing cannot arrive:** GREEN-API has no incoming presence/typing webhook type (verified against the official `type-webhook` list), so “interlocutor is typing” never comes from the network. The header indicator UI is kept (with a “Test: typing indicator” item in the chat ⋮ menu) in case MAX-type instances start emitting presence events; the parser lives in `src/utils/typing.ts`.
+
 ### 3. Security & Credential Management
 - **Security Notice:** Inputting API tokens (`idInstance`, `apiTokenInstance`) directly into a browser SPA is suitable for demonstration environments, internal tooling, or personal single-tenant use.
 - **BFF (Backend for Frontend) Best Practice:** For production deployments with multiple untrusted users, credentials should never be stored in browser `localStorage` or transmitted from client code. Instead, requests should be proxied through a secure backend (BFF) that manages secret credentials in a secure vault and authenticates end-users via JWT or session cookies.

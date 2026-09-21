@@ -173,7 +173,9 @@ export class GreenApiService {
   }
 
   /**
-   * Send typing notification to a recipient via GREEN-API
+   * Send typing notification to a recipient via GREEN-API.
+   * Официальный формат (доки SendTyping): `{ chatId: "7999...@c.us", typingTime: 5000 }`.
+   * MAX-инстансы принимают plain numeric — пробуем его первым, при 400 fallback на @c.us.
    */
   static async sendTyping(
     creds: GreenApiCredentials,
@@ -189,26 +191,38 @@ export class GreenApiService {
 
     const baseUrl = getBaseUrl(creds);
     const url = `${baseUrl}/waInstance${idInstance.trim()}/sendTyping/${apiTokenInstance.trim()}`;
-    // MAX-экосистема требует plain numeric ID без суффиксов (как в sendMessage).
-    const payload = {
-      chatId: cleanPhone,
-    };
 
-    try {
-      const response = await fetch(url, {
+    const postTyping = async (chat: string): Promise<Response> =>
+      fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ chatId: chat, typingTime: 5000 }),
         signal,
       });
+
+    try {
+      // 1. MAX-формат (plain numeric)
+      let response = await postTyping(cleanPhone);
+
+      // 2. Fallback для WhatsApp-инстансов, требующих суффикс @c.us
+      if (!response.ok && response.status === 400) {
+        response = await postTyping(`${cleanPhone}@c.us`);
+      }
 
       if (!response.ok) {
         return { result: false };
       }
 
-      return await response.json();
+      // Успех — пустое тело, но парсим терпимо.
+      const text = await response.text().catch(() => '');
+      if (!text || !text.trim()) return { result: true };
+      try {
+        return JSON.parse(text);
+      } catch {
+        return { result: true };
+      }
     } catch {
       return { result: false };
     }
