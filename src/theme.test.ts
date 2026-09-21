@@ -22,22 +22,27 @@ function collectTsx(dir: string, out: string[] = []): string[] {
 }
 
 describe('dark theme centralization guard', () => {
-  it('every light token has a dark: pair on the same className line', () => {
+  it('every light token has a dark: pair inside the same className attribute', () => {
+    // Атрибутный уровень (а не построчный): ветки тернарников `? a : b`
+    // и многострочные className иначе дают ложное спокойствие.
     const root = join(process.cwd(), 'src');
     const violations: string[] = [];
+    const attrRe = /className=(?:"([^"]*)"|`([\s\S]*?)`})/g;
     for (const file of collectTsx(root)) {
-      const lines = readFileSync(file, 'utf-8').split('\n');
-      lines.forEach((line, idx) => {
-        if (!line.includes('className') || isExemptClassLine(line)) return;
+      const src = readFileSync(file, 'utf-8');
+      for (const m of src.matchAll(attrRe)) {
+        const attr = m[1] ?? m[2] ?? '';
+        if (isExemptClassLine(attr)) continue;
+        const lineno = src.slice(0, m.index).split('\n').length;
         for (const rule of THEME_RULES) {
-          if (new RegExp(rule.pattern).test(line) && !line.includes(rule.darkMarker)) {
+          if (new RegExp(rule.pattern).test(attr) && !attr.includes(rule.darkMarker)) {
             violations.push(
-              `${relative(process.cwd(), file)}:${idx + 1}: /${rule.pattern}/ without ${rule.darkMarker}`
+              `${relative(process.cwd(), file)}:${lineno}: /${rule.pattern}/ without ${rule.darkMarker}`
             );
             break;
           }
         }
-      });
+      }
     }
     expect(violations, `\n${violations.join('\n')}`).toEqual([]);
   });

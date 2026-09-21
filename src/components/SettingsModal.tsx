@@ -531,7 +531,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               className={`flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-left transition-all shrink-0 sm:shrink cursor-pointer ${
                 activeTab === 'chat'
                   ? 'max-gradient-primary text-white shadow-xs'
-                  : 'text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <Globe className="w-4 h-4 shrink-0" />
@@ -546,7 +546,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               className={`flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-left transition-all shrink-0 sm:shrink cursor-pointer ${
                 activeTab === 'notifications'
                   ? 'max-gradient-primary text-white shadow-xs'
-                  : 'text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <Bell className="w-4 h-4 shrink-0" />
@@ -561,7 +561,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               className={`flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-left transition-all shrink-0 sm:shrink cursor-pointer ${
                 activeTab === 'connection'
                   ? 'max-gradient-primary text-white shadow-xs'
-                  : 'text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <Wifi className="w-4 h-4 shrink-0" />
@@ -576,7 +576,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               className={`flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-left transition-all shrink-0 sm:shrink cursor-pointer ${
                 activeTab === 'integration'
                   ? 'max-gradient-primary text-white shadow-xs'
-                  : 'text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <Code2 className="w-4 h-4 shrink-0" />
@@ -593,7 +593,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               className={`flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-left transition-all shrink-0 sm:shrink cursor-pointer ${
                 activeTab === 'data'
                   ? 'max-gradient-primary text-white shadow-xs'
-                  : 'text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <Database className="w-4 h-4 shrink-0" />
@@ -627,8 +627,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       }}
                       className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                         lang === 'ru'
-                          ? 'border-[#471AFF] bg-indigo-50/80 text-[#471AFF] dark:text-indigo-300 shadow-xs'
-                          : 'border-slate-200 bg-white text-slate-700 dark:text-slate-200 hover:bg-slate-100/70 dark:hover:bg-slate-800 dark:hover:bg-slate-800'
+                          ? 'border-[#471AFF] bg-indigo-50/80 dark:bg-indigo-950/60 text-[#471AFF] dark:text-indigo-300 shadow-xs'
+                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100/70 dark:hover:bg-slate-700'
                       }`}
                     >
                       <div className="flex items-center gap-2">
@@ -646,8 +646,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       }}
                       className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                         lang === 'en'
-                          ? 'border-[#471AFF] bg-indigo-50/80 text-[#471AFF] dark:text-indigo-300 shadow-xs'
-                          : 'border-slate-200 bg-white text-slate-700 dark:text-slate-200 hover:bg-slate-100/70 dark:hover:bg-slate-800 dark:hover:bg-slate-800'
+                          ? 'border-[#471AFF] bg-indigo-50/80 dark:bg-indigo-950/60 text-[#471AFF] dark:text-indigo-300 shadow-xs'
+                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100/70 dark:hover:bg-slate-700'
                       }`}
                     >
                       <div className="flex items-center gap-2">
@@ -707,8 +707,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         onClick={() => onUpdateSettings({ ...settings, fontSize: size })}
                         className={`px-3 py-2 rounded-xl text-xs font-semibold border text-center transition-all cursor-pointer ${
                           settings.fontSize === size
-                            ? 'border-[#471AFF] bg-indigo-50/70 text-[#471AFF] dark:text-indigo-300 shadow-xs'
-                            : 'border-slate-200 bg-white text-slate-700 dark:text-slate-200 hover:bg-slate-50'
+                            ? 'border-[#471AFF] bg-indigo-50/70 dark:bg-indigo-950/60 text-[#471AFF] dark:text-indigo-300 shadow-xs'
+                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
                         }`}
                       >
                         {size === 'small' ? t.fontSizeSmall : size === 'medium' ? t.fontSizeMedium : t.fontSizeLarge}
@@ -757,8 +757,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         onClick={() => onUpdateSettings({ ...settings, theme: opt.v })}
                         className={`px-3 py-2 rounded-xl text-xs font-semibold border text-center transition-all cursor-pointer ${
                           settings.theme === opt.v
-                            ? 'border-[#471AFF] bg-indigo-50/70 text-[#471AFF] dark:text-indigo-300 shadow-xs'
-                            : 'border-slate-200 bg-white text-slate-700 dark:text-slate-200 hover:bg-slate-50'
+                            ? 'border-[#471AFF] bg-indigo-50/70 dark:bg-indigo-950/60 text-[#471AFF] dark:text-indigo-300 shadow-xs'
+                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
                         }`}
                       >
                         {opt.label}
@@ -841,7 +841,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
                         isPlayingSound
                           ? 'bg-[#471AFF] text-white shadow-xs'
-                          : 'bg-white text-[#471AFF] dark:text-indigo-300 hover:bg-indigo-50 border border-indigo-200 shadow-2xs'
+                          : 'bg-white dark:bg-slate-800 text-[#471AFF] dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 shadow-2xs'
                       }`}
                     >
                       <Volume2 className={`w-3.5 h-3.5 ${isPlayingSound ? 'animate-bounce' : ''}`} />
@@ -1130,8 +1130,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         }}
                         className={`text-[10px] px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
                           editApiUrl === 'https://api.green-api.com'
-                            ? 'bg-indigo-50 border-[#471AFF]/30 text-[#471AFF] dark:text-indigo-300 font-medium'
-                            : 'bg-slate-100/80 border-slate-200/80 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60'
+                            ? 'bg-indigo-50 dark:bg-indigo-950/60 border-[#471AFF]/30 text-[#471AFF] dark:text-indigo-300 font-medium'
+                            : 'bg-slate-100/80 dark:bg-slate-800/80 border-slate-200/80 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700'
                         }`}
                       >
                         api.green-api.com
@@ -1145,11 +1145,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           }}
                           className={`text-[10px] px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
                             editApiUrl === `https://${editIdInstance.trim().slice(0, 4)}.api.green-api.com`
-                              ? 'bg-indigo-50 border-[#471AFF]/30 text-[#471AFF] dark:text-indigo-300 font-medium'
-                              : 'bg-slate-100/80 border-slate-200/80 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60'
-                          }`}
-                        >
-                          {editIdInstance.trim().slice(0, 4)}.api.green-api.com
+                            ? 'bg-indigo-50 dark:bg-indigo-950/60 border-[#471AFF]/30 text-[#471AFF] dark:text-indigo-300 font-medium'
+                            : 'bg-slate-100/80 dark:bg-slate-800/80 border-slate-200/80 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        {editIdInstance.trim().slice(0, 4)}.api.green-api.com
                         </button>
                       )}
                       <button
@@ -1160,8 +1160,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         }}
                         className={`text-[10px] px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
                           editApiUrl === 'https://7103.api.greenapi.com'
-                            ? 'bg-indigo-50 border-[#471AFF]/30 text-[#471AFF] dark:text-indigo-300 font-medium'
-                            : 'bg-slate-100/80 border-slate-200/80 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60'
+                            ? 'bg-indigo-50 dark:bg-indigo-950/60 border-[#471AFF]/30 text-[#471AFF] dark:text-indigo-300 font-medium'
+                            : 'bg-slate-100/80 dark:bg-slate-800/80 border-slate-200/80 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700'
                         }`}
                       >
                         7103.api.greenapi.com
@@ -1187,7 +1187,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           ? 'bg-emerald-600 text-white'
                           : hasCredsChanges
                           ? 'max-gradient-primary text-white hover:opacity-95'
-                          : 'bg-slate-100 text-slate-700 dark:text-slate-200 hover:bg-slate-200'
+                          : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600'
                       }`}
                     >
                       {isSavedRecently ? (
@@ -1224,10 +1224,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   {statusResult && (
                     <div className={`p-2.5 rounded-xl text-xs flex items-center space-x-2 ${
                       statusState === 'success' 
-                        ? 'bg-emerald-50 text-emerald-700 dark:text-emerald-300 border border-emerald-200'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                         : statusState === 'error'
-                        ? 'bg-rose-50 text-rose-700 dark:text-rose-300 border border-rose-200'
-                        : 'bg-amber-50 text-amber-700 dark:text-amber-300 border border-amber-200'
+                        ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+                        : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
                     }`}>
                       <div className={`w-2 h-2 rounded-full shrink-0 ${
                         statusState === 'success' ? 'bg-emerald-500' : statusState === 'error' ? 'bg-rose-500' : 'bg-amber-500'
@@ -1366,8 +1366,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         onClick={() => onUpdateSettings({ ...settings, pollingIntervalMs: opt.ms })}
                         className={`px-2 py-2 rounded-xl text-xs font-semibold border text-center transition-all cursor-pointer truncate ${
                           settings.pollingIntervalMs === opt.ms
-                            ? 'border-[#471AFF] bg-indigo-50/70 text-[#471AFF] dark:text-indigo-300 shadow-xs'
-                            : 'border-slate-200 bg-white text-slate-700 dark:text-slate-200 hover:bg-slate-50'
+                            ? 'border-[#471AFF] bg-indigo-50/70 dark:bg-indigo-950/60 text-[#471AFF] dark:text-indigo-300 shadow-xs'
+                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
                         }`}
                         title={opt.label}
                       >
@@ -1502,8 +1502,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           onClick={() => onUpdateSettings({ ...settings, autoLockMinutes: opt.m })}
                           className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
                             settings.autoLockMinutes === opt.m
-                              ? 'border-[#471AFF] bg-indigo-50/70 text-[#471AFF] dark:text-indigo-300'
-                              : 'border-slate-200 bg-white text-slate-600 dark:text-slate-300 hover:bg-slate-50'
+                              ? 'border-[#471AFF] bg-indigo-50/70 dark:bg-indigo-950/60 text-[#471AFF] dark:text-indigo-300'
+                              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
                           }`}
                         >
                           {opt.label}
@@ -1528,8 +1528,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           onClick={() => onUpdateSettings({ ...settings, messageTtlDays: opt.d })}
                           className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
                             settings.messageTtlDays === opt.d
-                              ? 'border-[#471AFF] bg-indigo-50/70 text-[#471AFF] dark:text-indigo-300'
-                              : 'border-slate-200 bg-white text-slate-600 dark:text-slate-300 hover:bg-slate-50'
+                              ? 'border-[#471AFF] bg-indigo-50/70 dark:bg-indigo-950/60 text-[#471AFF] dark:text-indigo-300'
+                              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
                           }`}
                         >
                           {opt.label}

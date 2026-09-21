@@ -109,7 +109,13 @@ export const THEME_RULES: ThemeRule[] = [
   { pattern: L('focus:bg-white'), darkMarker: 'dark:focus:bg-' },
 ];
 
-/** className-строки, которым пары не нужны (бренд-поверхности, читаемые в обеих темах). */
-export function isExemptClassLine(line: string): boolean {
-  return /max-gradient-|bg-rose-500|bg-emerald-500|bg-\[#471AFF\]|from-\[#00BFFF\]/.test(line);
+/**
+ * Exemption'ов больше нет: даже фирменные поверхности (max-gradient-*,
+ * bg-[#471AFF], bg-rose-500) проверяются наравне со всеми — они уже
+ * доказали, что умеют прятать светлую соседнюю ветку тернарника
+ * (кейс: кнопка «Применить и сохранить шлюз»).
+ * Градиентные кнопки и так проходят: text-white и hover:opacity правил не имеют.
+ */
+export function isExemptClassLine(_line: string): boolean {
+  return false;
 }
