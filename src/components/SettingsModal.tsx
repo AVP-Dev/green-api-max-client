@@ -36,7 +36,8 @@ import {
   requestBrowserNotificationPermission,
 } from '../utils/notifications';
 import { IntegrationPanel } from './IntegrationPanel';
-import { APP_VERSION } from '../config';
+import { APP_VERSION, BFF_URL, isBffConfigured } from '../config';
+import { decryptBackup, encryptBackup, isEncryptedBackup } from '../utils/backupCrypto';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -62,6 +63,8 @@ interface SettingsModalProps {
   /** Session vs persistent credential storage («Запомнить на этом устройстве»). */
   credsPersistent?: boolean;
   onUpdateCredsPersistence?: (persistent: boolean) => void;
+  /** Импорт бэкапа (plain JSON или шифрованный). Слияние с дедупликацией — в App. */
+  onImportBackup?: (dialogs: ChatDialog[], messages: ChatMessage[]) => void;
 }
 
 type TabType = 'chat' | 'notifications' | 'connection' | 'integration' | 'data';
@@ -88,6 +91,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onTestBrowserNotification,
   credsPersistent = true,
   onUpdateCredsPersistence,
+  onImportBackup,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('chat');
   const [checkingStatus, setCheckingStatus] = useState(false);
@@ -98,7 +102,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   // SECURITY: бэкап содержит переписку в plaintext — по умолчанию выгружаем без
   // текстов сообщений (только список диалогов), чтобы файл можно было безопасно
   // пересылать. Токен apiTokenInstance не выгружается никогда.
+  // С паролем — AES-GCM шифрование (PBKDF2-SHA256, 200k) через backupCrypto.
   const [exportWithMessages, setExportWithMessages] = useState(false);
+  const [backupPassword, setBackupPassword] = useState('');
+  const [backupBusy, setBackupBusy] = useState(false);
+  const [backupError, setBackupError] = useState<string | null>(null);
   const [isPlayingSound, setIsPlayingSound] = useState(false);
   const [browserPermission, setBrowserPermission] = useState<'default' | 'granted' | 'denied' | 'unsupported'>('default');
   const [testNotifSuccess, setTestNotifSuccess] = useState(false);
@@ -397,29 +405,77 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
-  const handleExportData = () => {
+  const downloadTextFile = (text: string, filename: string) => {
+    const blob = new Blob([text], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportData = async () => {
+    setBackupError(null);
+    // NB: apiTokenInstance сюда намеренно НЕ включается — файл бэкапа
+    // часто пересылают, а токен = полный доступ к инстансу.
+    const exportObject = {
+      exportedAt: new Date().toISOString(),
+      version: '1.0',
+      instanceId: creds?.idInstance,
+      dialogs,
+      messages: exportWithMessages ? messages : [],
+      messagesExcluded: !exportWithMessages,
+    };
+    const plain = JSON.stringify(exportObject, null, 2);
+    const date = new Date().toISOString().slice(0, 10);
     try {
-      // NB: apiTokenInstance сюда намеренно НЕ включается — файл бэкапа
-      // часто пересылают, а токен = полный доступ к инстансу.
-      const exportObject = {
-        exportedAt: new Date().toISOString(),
-        version: '1.0',
-        instanceId: creds?.idInstance,
-        dialogs,
-        messages: exportWithMessages ? messages : [],
-        messagesExcluded: !exportWithMessages,
-      };
-      const blob = new Blob([JSON.stringify(exportObject, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `max-web-backup-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (e) {
+      if (backupPassword) {
+        setBackupBusy(true);
+        const enc = await encryptBackup(plain, backupPassword);
+        downloadTextFile(JSON.stringify(enc, null, 2), `max-web-backup-${date}.enc.json`);
+      } else {
+        downloadTextFile(plain, `max-web-backup-${date}.json`);
+      }
+    } catch (e: any) {
       console.error('Failed to export data', e);
+      setBackupError(e?.message || (isRu ? 'Ошибка выгрузки' : 'Export failed'));
+    } finally {
+      setBackupBusy(false);
+    }
+  };
+
+  const handleImportFile = async (file: File) => {
+    setBackupError(null);
+    if (!onImportBackup) return;
+    try {
+      setBackupBusy(true);
+      const text = await file.text();
+      const parsed: unknown = JSON.parse(text);
+      let inner: unknown = parsed;
+      if (isEncryptedBackup(parsed)) {
+        if (!backupPassword) {
+          throw new Error(
+            isRu
+              ? 'Файл зашифрован — введите пароль в поле выше и выберите файл снова'
+              : 'File is encrypted — enter the password above and pick the file again'
+          );
+        }
+        inner = JSON.parse(await decryptBackup(parsed, backupPassword));
+      }
+      const obj = inner as { dialogs?: unknown; messages?: unknown };
+      if (!obj || !Array.isArray(obj.dialogs)) {
+        throw new Error(isRu ? 'Некорректный файл бэкапа: нет dialogs[]' : 'Invalid backup: missing dialogs[]');
+      }
+      const msgs = Array.isArray(obj.messages) ? obj.messages : [];
+      onImportBackup(obj.dialogs as ChatDialog[], msgs as ChatMessage[]);
+    } catch (e: any) {
+      console.error('Failed to import backup', e);
+      setBackupError(e?.message || (isRu ? 'Ошибка импорта' : 'Import failed'));
+    } finally {
+      setBackupBusy(false);
     }
   };
 
@@ -429,13 +485,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-3 sm:p-4 animate-in fade-in duration-150"
       onClick={onClose}
     >
-      <div 
+      <div
         id="settings-modal-card"
-        className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col h-[85dvh] sm:h-[530px] max-h-[92dvh] animate-in zoom-in-95 duration-200"
+        className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col h-[85dvh] sm:h-[530px] max-h-[92dvh] animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 bg-slate-50/80 shrink-0">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900 shrink-0">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 rounded-xl max-gradient-primary text-white flex items-center justify-center shadow-xs">
               <SettingsIcon className="w-4 h-4" />
@@ -676,6 +732,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       className="mt-0.5 rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
                     />
                   </label>
+                </div>
+
+                {/* Theme */}
+                <div className="pt-3 border-t border-slate-100">
+                  <label className="block text-xs font-semibold text-slate-700 mb-2">
+                    {lang === 'ru' ? 'Тема оформления' : 'Appearance'}
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(
+                      [
+                        { v: 'system', label: lang === 'ru' ? 'Система' : 'System' },
+                        { v: 'light', label: lang === 'ru' ? 'Светлая' : 'Light' },
+                        { v: 'dark', label: lang === 'ru' ? 'Тёмная' : 'Dark' },
+                      ] as const
+                    ).map((opt) => (
+                      <button
+                        key={opt.v}
+                        id={`theme-${opt.v}`}
+                        type="button"
+                        onClick={() => onUpdateSettings({ ...settings, theme: opt.v })}
+                        className={`px-3 py-2 rounded-xl text-xs font-semibold border text-center transition-all cursor-pointer ${
+                          settings.theme === opt.v
+                            ? 'border-[#471AFF] bg-indigo-50/70 text-[#471AFF] shadow-xs'
+                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Quick Replies / Templates section */}
@@ -1287,6 +1373,57 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     ))}
                   </div>
                 </div>
+
+                {/* Background journal sync toggle */}
+                <div className="pt-3 border-t border-slate-100">
+                  <label className="flex items-start justify-between cursor-pointer">
+                    <div className="pr-4">
+                      <span className="text-xs font-semibold text-slate-700 block">
+                        {lang === 'ru' ? 'Фоновая сверка журнала' : 'Background journal sync'}
+                      </span>
+                      <span className="text-xs text-slate-500 block mt-0.5">
+                        {lang === 'ru'
+                          ? 'Добирает пропущенное через lastIncoming/lastOutgoing (3 запроса за тик). Выкл — только long-poll очереди, минимум трафика.'
+                          : 'Backfills missed messages via lastIncoming/lastOutgoing (3 req/tick). Off — queue long-poll only, minimal traffic.'}
+                      </span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={settings.backgroundSyncEnabled !== false}
+                      onChange={(e) =>
+                        onUpdateSettings({ ...settings, backgroundSyncEnabled: e.target.checked })
+                      }
+                      className="mt-0.5 rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                    />
+                  </label>
+                </div>
+
+                {/* BFF proxy mode */}
+                <div className="pt-3 border-t border-slate-100">
+                  <label className="flex items-start justify-between cursor-pointer">
+                    <div className="pr-4">
+                      <span className="text-xs font-semibold text-slate-700 block">
+                        {lang === 'ru' ? 'BFF-прокси (без токена в браузере)' : 'BFF proxy (no token in browser)'}
+                      </span>
+                      <span className="text-xs text-slate-500 block mt-0.5">
+                        {isBffConfigured()
+                          ? lang === 'ru'
+                            ? `Отправка и опрос через ${BFF_URL}. Токен хранится в vault на сервере (см. bff/README.md).`
+                            : `Send & poll via ${BFF_URL}. Token stays in server vault (see bff/README.md).`
+                          : lang === 'ru'
+                            ? 'Не настроен: задайте VITE_BFF_URL на этапе сборки и поднимите bff/ (см. bff/README.md).'
+                            : 'Not configured: set build-time VITE_BFF_URL and run bff/ (see bff/README.md).'}
+                      </span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={settings.bffEnabled === true}
+                      disabled={!isBffConfigured()}
+                      onChange={(e) => onUpdateSettings({ ...settings, bffEnabled: e.target.checked })}
+                      className="mt-0.5 rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer disabled:opacity-40"
+                    />
+                  </label>
+                </div>
               </div>
             )}
 
@@ -1324,6 +1461,62 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </label>
                 )}
 
+                {/* Auto-lock + TTL */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/50">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      {lang === 'ru' ? 'Авто-выход при простое' : 'Auto-lock on inactivity'}
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { m: 0, label: lang === 'ru' ? 'Выкл' : 'Off' },
+                        { m: 5, label: '5 мин' },
+                        { m: 15, label: '15 мин' },
+                        { m: 60, label: '1 ч' },
+                      ].map((opt) => (
+                        <button
+                          key={opt.m}
+                          type="button"
+                          onClick={() => onUpdateSettings({ ...settings, autoLockMinutes: opt.m })}
+                          className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
+                            settings.autoLockMinutes === opt.m
+                              ? 'border-[#471AFF] bg-indigo-50/70 text-[#471AFF]'
+                              : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/50">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      {lang === 'ru' ? 'Хранить сообщения' : 'Keep messages'}
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { d: 0, label: lang === 'ru' ? 'Все' : 'All' },
+                        { d: 7, label: lang === 'ru' ? '7 дней' : '7 days' },
+                        { d: 30, label: lang === 'ru' ? '30 дней' : '30 days' },
+                        { d: 90, label: lang === 'ru' ? '90 дней' : '90 days' },
+                      ].map((opt) => (
+                        <button
+                          key={opt.d}
+                          type="button"
+                          onClick={() => onUpdateSettings({ ...settings, messageTtlDays: opt.d })}
+                          className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
+                            settings.messageTtlDays === opt.d
+                              ? 'border-[#471AFF] bg-indigo-50/70 text-[#471AFF]'
+                              : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
                 {/* Export Data */}
                 <div className="flex flex-col gap-3 p-3.5 rounded-xl border border-slate-100 bg-slate-50/50">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1339,10 +1532,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       id="export-chats-button"
                       type="button"
                       onClick={handleExportData}
-                      className="inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-xs cursor-pointer shrink-0 self-start sm:self-auto"
+                      disabled={backupBusy}
+                      className="inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-xs cursor-pointer shrink-0 self-start sm:self-auto disabled:opacity-50"
                     >
                       <Download className="w-3.5 h-3.5" />
-                      <span>JSON</span>
+                      <span>{backupPassword ? (lang === 'ru' ? 'Шифр. JSON' : 'Enc. JSON') : 'JSON'}</span>
                     </button>
                   </div>
                   <label className="flex items-start gap-2 cursor-pointer select-none">
@@ -1358,6 +1552,60 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         : 'Include message texts (off by default — a plaintext backup must not be shared with third parties). The access token is never included in the export.'}
                     </span>
                   </label>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      {lang === 'ru' ? 'Пароль шифрования (AES-GCM, опционально)' : 'Encryption password (AES-GCM, optional)'}
+                    </label>
+                    <input
+                      id="backup-password-input"
+                      type="password"
+                      value={backupPassword}
+                      onChange={(e) => {
+                        setBackupPassword(e.target.value);
+                        setBackupError(null);
+                      }}
+                      placeholder={lang === 'ru' ? 'Минимум 4 символа — иначе plain JSON' : 'Min 4 chars — else plain JSON'}
+                      autoComplete="new-password"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-[#471AFF] focus:ring-1 focus:ring-[#471AFF]/20"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      {lang === 'ru'
+                        ? 'Тот же пароль используется для расшифровки при импорте. Без пароля — обычный JSON.'
+                        : 'The same password decrypts on import. No password — plain JSON.'}
+                    </p>
+                  </div>
+                  {onImportBackup && (
+                    <div className="flex items-center gap-2">
+                      <label
+                        htmlFor="import-backup-file"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-xs cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5 rotate-180" />
+                        <span>{lang === 'ru' ? 'Импорт бэкапа' : 'Import backup'}</span>
+                      </label>
+                      <input
+                        id="import-backup-file"
+                        type="file"
+                        accept="application/json,.json"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          e.target.value = '';
+                          if (f) handleImportFile(f);
+                        }}
+                      />
+                      {backupBusy && (
+                        <span className="text-[11px] text-slate-500">
+                          {lang === 'ru' ? 'Обработка…' : 'Working…'}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {backupError && (
+                    <div className="p-2.5 rounded-xl text-[11px] bg-rose-50 text-rose-700 border border-rose-200 break-words">
+                      {backupError}
+                    </div>
+                  )}
                 </div>
 
                 {/* Clear local chat history */}

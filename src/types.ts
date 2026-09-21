@@ -91,6 +91,50 @@ export interface GreenApiNotification {
   };
 }
 
+/**
+ * Свободная форма тела уведомления GREEN-API.
+ * Сервер шлёт варианты WhatsApp / MAX / journal с разными полями,
+ * поэтому все поля опциональны. Используется вместо `as any` в парсинге.
+ */
+export interface GreenApiLooseBody {
+  typeWebhook?: string;
+  type?: string;
+  idMessage?: string;
+  timestamp?: number;
+  chatId?: string;
+  senderId?: string;
+  sender?: string;
+  senderName?: string;
+  senderContactName?: string;
+  presence?: string;
+  status?: string;
+  state?: string;
+  message?: string;
+  textMessage?: string;
+  typeMessage?: string;
+  senderData?: {
+    chatId?: string;
+    sender?: string;
+    senderName?: string;
+    senderContactName?: string;
+  };
+  presenceData?: { presence?: string; chatId?: string };
+  chatData?: { chatId?: string };
+  messageData?: {
+    typeMessage?: string;
+    textMessage?: string;
+    text?: string;
+    textMessageData?: { textMessage?: string };
+    extendedTextMessageData?: { text?: string; description?: string; title?: string };
+    fileMessageData?: { downloadUrl?: string; caption?: string; fileName?: string; mimeType?: string };
+    locationMessageData?: { nameLocation?: string; address?: string; latitude?: number; longitude?: number };
+    contactMessageData?: { displayName?: string; vcard?: string };
+  };
+  extendedTextMessage?: { text?: string; description?: string; title?: string };
+  fileMessage?: { caption?: string; fileName?: string; downloadUrl?: string };
+  fileMessageData?: { caption?: string; fileName?: string; downloadUrl?: string };
+}
+
 export type PollingStatus = 'idle' | 'active' | 'error' | 'reconnecting' | 'paused';
 
 export type Language = 'ru' | 'en';
@@ -142,6 +186,8 @@ export interface GreenApiJournalMessage {
   sendByApi?: boolean;
 }
 
+export type ThemeMode = 'light' | 'dark' | 'system';
+
 export interface AppSettings {
   pollingIntervalMs: number; // 1000, 2000, 5000
   soundEnabled: boolean;
@@ -152,6 +198,16 @@ export interface AppSettings {
   browserNotificationsEnabled: boolean;
   /** Beautiful in-app popup card (fires only when the user looks at this tab). */
   inAppPopupsEnabled: boolean;
+  /** Интерфейсная тема: light / dark / system. */
+  theme: ThemeMode;
+  /** Фоновая сверка журнала (lastIncoming/lastOutgoing/getChatHistory). Выкл — только long-poll. */
+  backgroundSyncEnabled: boolean;
+  /** Авто-выход при простое, минут. 0 — выключено. */
+  autoLockMinutes: number;
+  /** TTL сообщений, дней. 0 — хранить бессрочно (в пределах лимита количества). */
+  messageTtlDays: number;
+  /** BFF-режим: send/receive/ack через прокси без токена в браузере. Требует VITE_BFF_URL. */
+  bffEnabled: boolean;
 }
 
 export interface QuickReply {

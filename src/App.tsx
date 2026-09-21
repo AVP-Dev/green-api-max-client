@@ -52,8 +52,10 @@ import {
   MAX_MESSAGE_LENGTH,
   MESSAGE_RETENTION_LIMIT,
   STORAGE_KEYS,
+  isBffConfigured,
   sanitizePollingInterval,
 } from './config';
+import { setBffRouteEnabled } from './utils/bffClient';
 
 const DEFAULT_SETTINGS: AppSettings = {
   pollingIntervalMs: DEFAULT_POLLING_MS,
@@ -63,7 +65,42 @@ const DEFAULT_SETTINGS: AppSettings = {
   showPhoneFormatting: true,
   browserNotificationsEnabled: true,
   inAppPopupsEnabled: true,
+  theme: 'system',
+  backgroundSyncEnabled: true,
+  autoLockMinutes: 0,
+  messageTtlDays: 0,
+  bffEnabled: false,
 };
+
+const AUTO_LOCK_OPTIONS = [0, 5, 15, 60] as const;
+const MESSAGE_TTL_OPTIONS = [0, 7, 30, 90] as const;
+
+function sanitizeSettings(raw: unknown): AppSettings {
+  const parsed = (raw && typeof raw === 'object' ? raw : {}) as Partial<AppSettings>;
+  return {
+    ...DEFAULT_SETTINGS,
+    ...parsed,
+    pollingIntervalMs: sanitizePollingInterval(parsed?.pollingIntervalMs),
+    theme: parsed.theme === 'light' || parsed.theme === 'dark' || parsed.theme === 'system'
+      ? parsed.theme
+      : DEFAULT_SETTINGS.theme,
+    backgroundSyncEnabled: parsed.backgroundSyncEnabled !== false,
+    autoLockMinutes: (AUTO_LOCK_OPTIONS as readonly number[]).includes(Number(parsed.autoLockMinutes))
+      ? Number(parsed.autoLockMinutes)
+      : DEFAULT_SETTINGS.autoLockMinutes,
+    messageTtlDays: (MESSAGE_TTL_OPTIONS as readonly number[]).includes(Number(parsed.messageTtlDays))
+      ? Number(parsed.messageTtlDays)
+      : DEFAULT_SETTINGS.messageTtlDays,
+    bffEnabled: parsed.bffEnabled === true,
+  };
+}
+
+/** Отсекает сообщения старше TTL (дней). 0 — без ограничения по возрасту. */
+export function pruneExpiredMessages<T extends { timestamp: number }>(list: T[], ttlDays: number): T[] {
+  if (!ttlDays || ttlDays <= 0) return list;
+  const cutoff = Date.now() - ttlDays * 24 * 60 * 60 * 1000;
+  return list.filter((m) => (m.timestamp || 0) >= cutoff);
+}
 
 // Initial welcome dialogue if empty
 const DEFAULT_INITIAL_PHONE = '79991234567';
@@ -88,18 +125,11 @@ export default function App() {
 
   const t = translations[lang];
 
-  // 1.1 App Settings state (polling санитизируем — битый localStorage не должен ронять опрос)
+  // 1.1 App Settings state (санитизируем — битый localStorage не должен ронять опрос/тему)
   const [settings, setSettings] = useState<AppSettings>(() => {
     try {
       const saved = safeStorage.getItem(STORAGE_KEYS.SETTINGS);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return {
-          ...DEFAULT_SETTINGS,
-          ...parsed,
-          pollingIntervalMs: sanitizePollingInterval(parsed?.pollingIntervalMs),
-        };
-      }
+      if (saved) return sanitizeSettings(JSON.parse(saved));
     } catch {
       // ignore
     }
@@ -306,6 +336,28 @@ export default function App() {
     safeStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
   }, [settings]);
 
+  // BFF-маршрутизация: только когда настроен VITE_BFF_URL и включён тумблер.
+  useEffect(() => {
+    setBffRouteEnabled(settings.bffEnabled && isBffConfigured());
+  }, [settings.bffEnabled]);
+
+  // 1.2 Тема: class-based dark для Tailwind v4 (@custom-variant dark).
+  // system — следим за prefers-color-scheme в реальном времени.
+  useEffect(() => {
+    const root = document.documentElement;
+    const mq = window.matchMedia?.('(prefers-color-scheme: dark)');
+    const apply = () => {
+      const dark = settings.theme === 'dark' || (settings.theme === 'system' && !!mq?.matches);
+      root.classList.toggle('dark', dark);
+      root.style.colorScheme = dark ? 'dark' : 'light';
+    };
+    apply();
+    if (settings.theme === 'system' && mq) {
+      mq.addEventListener('change', apply);
+      return () => mq.removeEventListener('change', apply);
+    }
+  }, [settings.theme]);
+
   useEffect(() => {
     if (creds) {
       saveCreds(creds, credsPersistent);
@@ -322,12 +374,11 @@ export default function App() {
   }, [dialogs]);
 
   useEffect(() => {
+    const fresh = pruneExpiredMessages(messages, settings.messageTtlDays);
     const capped =
-      messages.length > MESSAGE_RETENTION_LIMIT
-        ? messages.slice(-MESSAGE_RETENTION_LIMIT)
-        : messages;
+      fresh.length > MESSAGE_RETENTION_LIMIT ? fresh.slice(-MESSAGE_RETENTION_LIMIT) : fresh;
     safeStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(capped));
-  }, [messages]);
+  }, [messages, settings.messageTtlDays]);
 
   useEffect(() => {
     safeStorage.setItem(STORAGE_KEYS.CONTACTS, JSON.stringify(contacts));
@@ -1002,12 +1053,22 @@ export default function App() {
     }
   }, [creds?.idInstance, creds?.apiTokenInstance, syncRecentMessages]);
 
+  // TTL: при смене настройки вычищаем просроченное и из памяти, не только из хранилища.
+  useEffect(() => {
+    if (settings.messageTtlDays > 0) {
+      setMessages((prev) => pruneExpiredMessages(prev, settings.messageTtlDays));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.messageTtlDays]);
+
   // 7b. Background journal reconciliation (дополняет long-poll, не заменяет его).
   // Нагрузка: 3 запроса за тик, поэтому интервал растёт от настройки пользователя
   // settings.pollingIntervalMs (минимум 5с на активной вкладке, минимум 10с в фоне),
   // чтобы не упереться в 429 GREEN-API. На скрытой вкладке тики пропускаются.
+  // Отключается тумблером settings.backgroundSyncEnabled — остаётся только long-poll.
   useEffect(() => {
     if (!creds?.idInstance || !creds?.apiTokenInstance) return;
+    if (!settings.backgroundSyncEnabled) return;
 
     let isSubscribed = true;
     let isChecking = false;
@@ -1114,7 +1175,36 @@ export default function App() {
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [creds?.idInstance, creds?.apiTokenInstance, creds?.apiUrl, activeChatId, handleIncomingMessage, settings.pollingIntervalMs]);
+  }, [creds?.idInstance, creds?.apiTokenInstance, creds?.apiUrl, activeChatId, handleIncomingMessage, settings.pollingIntervalMs, settings.backgroundSyncEnabled]);
+
+  // 7c. Авто-лок: выход при простое дольше settings.autoLockMinutes (0 — выкл).
+  // Активность: мышь/клавиатура/тач/скролл. Таймер сбрасывается на каждое событие.
+  useEffect(() => {
+    const minutes = settings.autoLockMinutes;
+    if (!minutes || minutes <= 0 || !creds) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const lockNow = () => {
+      setCreds(null);
+      clearCreds();
+      showToast(
+        lang === 'ru'
+          ? `Сессия завершена после ${minutes} мин. простоя`
+          : `Session locked after ${minutes} min of inactivity`
+      );
+    };
+    const reschedule = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(lockNow, minutes * 60 * 1000);
+    };
+    const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'wheel'] as const;
+    events.forEach((e) => window.addEventListener(e, reschedule, { passive: true }));
+    reschedule();
+    return () => {
+      if (timer) clearTimeout(timer);
+      events.forEach((e) => window.removeEventListener(e, reschedule));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.autoLockMinutes, !!creds]);
 
   // 8. Long-polling engine initialization
   const { status: pollingStatus, lastReceiptId, errorMessage: pollingErrorMessage, retry: retryPolling } = useGreenApiPolling({
@@ -1235,6 +1325,39 @@ export default function App() {
       setIsSending(false);
     }
   };
+
+  // 9b. Повторная отправка упавшего сообщения (тот же id, статус sending -> sent/failed).
+  const handleRetryMessage = useCallback(
+    async (failedMsg: ChatMessage) => {
+      if (!creds || failedMsg.direction !== 'outgoing' || failedMsg.status !== 'failed') return;
+      const cleanPhone = sanitizePhone(failedMsg.chatId);
+      if (!cleanPhone) return;
+      setMessages((prev) =>
+        prev.map((m) => (m.id === failedMsg.id ? { ...m, status: 'sending' as const } : m))
+      );
+      try {
+        const response = await GreenApiService.sendMessage(creds, cleanPhone, failedMsg.text);
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === failedMsg.id
+              ? { ...m, status: 'sent' as const, id: response.idMessage || m.id }
+              : m
+          )
+        );
+      } catch (err: any) {
+        console.error('Retry message failed:', err);
+        setMessages((prev) =>
+          prev.map((m) => (m.id === failedMsg.id ? { ...m, status: 'failed' as const } : m))
+        );
+        showToast(
+          lang === 'ru'
+            ? `Повторная отправка не удалась: ${err.message || 'Проверьте инстанс'}`
+            : `Retry failed: ${err.message || 'Check instance'}`
+        );
+      }
+    },
+    [creds, lang]
+  );
 
   // 10. Start or select chat
   const handleSelectChat = (chatId: string) => {
@@ -1500,6 +1623,47 @@ export default function App() {
     showToast(lang === 'ru' ? 'Все диалоги и сообщения очищены' : 'All chats and messages cleared');
   };
 
+  // Импорт бэкапа: слияние с дедупликацией (диалоги — по chatId, сообщения — по id).
+  const handleImportBackup = useCallback(
+    (importedDialogs: ChatDialog[], importedMessages: ChatMessage[]) => {
+      const cleanDialogs = (Array.isArray(importedDialogs) ? importedDialogs : []).filter(
+        (d) => d && typeof d.chatId === 'string' && sanitizePhone(d.chatId)
+      );
+      const cleanMessages = (Array.isArray(importedMessages) ? importedMessages : []).filter(
+        (m) => m && typeof m.id === 'string' && typeof m.text === 'string'
+      );
+      // Применяем TTL импорта сразу, чтобы не воскрешать просроченное.
+      const freshMessages = pruneExpiredMessages(cleanMessages, settings.messageTtlDays);
+      setDialogs((prev) => {
+        const map = new Map(prev.map((d) => [d.chatId, d]));
+        cleanDialogs.forEach((d) => {
+          const id = sanitizePhone(d.chatId);
+          const existing = map.get(id);
+          if (!existing || (d.lastMessageTimestamp || 0) > (existing.lastMessageTimestamp || 0)) {
+            map.set(id, { ...d, chatId: id });
+          }
+        });
+        return sortDialogsWithPinnedFirst(Array.from(map.values()).slice(0, DIALOG_RETENTION_LIMIT));
+      });
+      setMessages((prev) => {
+        const known = new Set(prev.map((m) => m.id));
+        freshMessages.forEach((m) => known.add(m.id));
+        const merged = [...prev];
+        freshMessages.forEach((m) => {
+          if (!prev.some((p) => p.id === m.id)) merged.push(m);
+        });
+        merged.forEach((m) => knownMessageIdsRef.current.add(m.id));
+        return merged.slice(-MESSAGE_RETENTION_LIMIT);
+      });
+      showToast(
+        lang === 'ru'
+          ? `Импортировано: диалогов ${cleanDialogs.length}, сообщений ${freshMessages.length}`
+          : `Imported: ${cleanDialogs.length} dialogs, ${freshMessages.length} messages`
+      );
+    },
+    [lang, settings.messageTtlDays]
+  );
+
   const handleUpdateCreds = (newCreds: GreenApiCredentials) => {
     setCreds(newCreds);
     saveCreds(newCreds, credsPersistent);
@@ -1588,7 +1752,7 @@ export default function App() {
   };
 
   return (
-    <div className="fixed inset-0 w-full h-full flex overflow-hidden bg-white select-none font-sans">
+    <div className="fixed inset-0 w-full h-full flex overflow-hidden bg-white dark:bg-slate-950 select-none font-sans">
       {/* Toast Notification (centered at top so it never overlaps right-side PopupNotification) */}
       {toastMessage && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[10000] bg-slate-900/95 backdrop-blur-md text-white text-xs font-medium px-4 py-2 rounded-full shadow-xl border border-slate-700/80 animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-none flex items-center gap-2">
@@ -1600,12 +1764,12 @@ export default function App() {
       <OfflineIndicator lang={lang} />
 
       {/* Main Container */}
-      <div className="w-full h-full flex overflow-hidden bg-white">
+      <div className="w-full h-full flex overflow-hidden bg-white dark:bg-slate-950">
         {/* Left Sidebar (hidden on mobile if chat is active) */}
         <div
           className={`${
             activeChatId ? 'hidden md:flex' : 'flex'
-          } w-full md:w-[360px] lg:w-[400px] shrink-0 h-full flex-col border-r border-slate-200 bg-white z-10`}
+          } w-full md:w-[360px] lg:w-[400px] shrink-0 h-full flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-10`}
         >
           <Sidebar
             creds={creds}
@@ -1677,6 +1841,7 @@ export default function App() {
             quickReplies={quickReplies}
             onOpenQuickReplies={() => setIsQuickRepliesModalOpen(true)}
             initialDraft={activeDialog?.draft ?? null}
+            onRetryMessage={handleRetryMessage}
             onDraftConsumed={(cid) =>
               setDialogs((prev) =>
                 prev.map((d) => (d.chatId === cid ? { ...d, draft: undefined } : d))
@@ -1736,6 +1901,7 @@ export default function App() {
             onTestNotification={handleTestNotification}
             credsPersistent={credsPersistent}
             onUpdateCredsPersistence={handleUpdateCredsPersistence}
+            onImportBackup={handleImportBackup}
           />
         )}
 

@@ -8,8 +8,10 @@ MAX Web Messenger — pure frontend SPA без бэкенда. Токены GREE
 в `localStorage` («Запомнить на этом устройстве»).
 
 Это осознанный компромисс для демо / internal / single-tenant.
-Для публичного multi-user прод-деплоя используйте BFF-прокси:
-секреты в vault на сервере, а браузер аутентифицируется JWT/session cookie.
+Для публичного multi-user прод-деплоя используйте BFF-прокси (`bff/`):
+секреты в vault на сервере (`BFF_TOKENS_JSON`), браузер шлёт только
+`idInstance`. Включается сборкой с `VITE_BFF_URL` + тумблером
+Настройки → Подключение → «BFF-прокси».
 
 ## Built-in protections
 

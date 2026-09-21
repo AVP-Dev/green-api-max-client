@@ -11,8 +11,10 @@ WORKDIR /app
 # Значения приходят из docker-compose build.args или --build-arg.
 ARG VITE_TRUSTED_PARENT_ORIGINS=""
 ARG VITE_DEFAULT_API_URL="https://3100.api.green-api.com"
+ARG VITE_BFF_URL=""
 ENV VITE_TRUSTED_PARENT_ORIGINS=$VITE_TRUSTED_PARENT_ORIGINS
 ENV VITE_DEFAULT_API_URL=$VITE_DEFAULT_API_URL
+ENV VITE_BFF_URL=$VITE_BFF_URL
 
 # Copy dependency manifests (package-lock.json required for deterministic npm ci)
 COPY package.json package-lock.json ./

@@ -1,6 +1,8 @@
 import { GreenApiCredentials, GreenApiNotification, GreenApiJournalMessage } from '../types';
 import { sanitizePhone } from '../utils/formatters';
 import { DEFAULT_API_URL as CONFIG_DEFAULT_API_URL } from '../config';
+import { parseJournalList, parseNotification, rawContactSchema } from '../utils/greenApiSchemas';
+import { bffDeleteNotification, bffReceiveNotification, bffSendMessage, shouldUseBff } from '../utils/bffClient';
 
 // Re-export единого дефолта из src/config.ts (источник truth + VITE_DEFAULT_API_URL).
 export const DEFAULT_API_URL = CONFIG_DEFAULT_API_URL;
@@ -139,6 +141,11 @@ export class GreenApiService {
       throw new Error('Invalid recipient phone number');
     }
 
+    // BFF-режим: токен остаётся в vault на сервере, браузер шлёт только idInstance.
+    if (shouldUseBff()) {
+      return bffSendMessage(idInstance.trim(), cleanPhone, message, signal);
+    }
+
     const baseUrl = getBaseUrl(creds);
     const url = `${baseUrl}/waInstance${idInstance.trim()}/sendMessage/${apiTokenInstance.trim()}`;
     
@@ -218,6 +225,13 @@ export class GreenApiService {
     receiveTimeoutSeconds = 5
   ): Promise<GreenApiNotification | null> {
     const { idInstance, apiTokenInstance } = creds;
+    if (shouldUseBff()) {
+      return (await bffReceiveNotification(
+        idInstance.trim(),
+        receiveTimeoutSeconds,
+        signal
+      )) as GreenApiNotification | null;
+    }
     const baseUrl = getBaseUrl(creds);
     const url = `${baseUrl}/waInstance${idInstance.trim()}/receiveNotification/${apiTokenInstance.trim()}?receiveTimeout=${receiveTimeoutSeconds}`;
 
@@ -246,7 +260,7 @@ export class GreenApiService {
       return null;
     }
 
-    let data: any;
+    let data: unknown;
     try {
       data = JSON.parse(text);
     } catch {
@@ -254,8 +268,10 @@ export class GreenApiService {
       return null;
     }
 
-    // GREEN-API returns null or object without receiptId when no notification is pending
-    if (!data || typeof data !== 'object' || !data.receiptId) {
+    // GREEN-API returns null or object without receiptId when no notification is pending.
+    // Zod-валидация: повреждённые тела без числового receiptId — в null (очередь пуста),
+    // с receiptId — возвращаем как есть, хук обработает известное и сделает ack.
+    if (!parseNotification(data)) {
       return null;
     }
 
@@ -272,6 +288,9 @@ export class GreenApiService {
     signal?: AbortSignal
   ): Promise<{ result: boolean }> {
     const { idInstance, apiTokenInstance } = creds;
+    if (shouldUseBff()) {
+      return bffDeleteNotification(idInstance.trim(), receiptId, signal);
+    }
     const baseUrl = getBaseUrl(creds);
     const url = `${baseUrl}/waInstance${idInstance.trim()}/deleteNotification/${apiTokenInstance.trim()}/${receiptId}`;
 
@@ -479,7 +498,7 @@ export class GreenApiService {
       throw new Error(`Failed to fetch contacts (${response.status}): ${errText || response.statusText}`);
     }
 
-    const rawList: import('../types').GreenApiRawContact[] = await response.json();
+    const rawList: unknown = await response.json();
     if (!Array.isArray(rawList)) {
       return [];
     }
@@ -487,8 +506,11 @@ export class GreenApiService {
     const now = Date.now();
     const contactMap = new Map<string, import('../types').Contact>();
 
-    rawList.forEach((item) => {
-      if (!item || !item.id) return;
+    rawList.forEach((raw) => {
+      // Zod-валидация: элементы без id-строки отбрасываются.
+      const parsed = rawContactSchema.safeParse(raw);
+      if (!parsed.success) return;
+      const item = parsed.data;
       const cleanPhone = sanitizePhone(item.id);
       if (!cleanPhone) return;
 
@@ -501,7 +523,7 @@ export class GreenApiService {
           id: cleanPhone,
           name: name || undefined,
           contactName: contactName || undefined,
-          type: item.type || 'user',
+          type: item.type === 'group' ? 'group' : 'user',
           source: 'api',
           updatedAt: now,
         });
@@ -631,8 +653,8 @@ export class GreenApiService {
         return [];
       }
 
-      const list = await response.json();
-      return Array.isArray(list) ? list : [];
+      const list: unknown = await response.json();
+      return parseJournalList(list) as GreenApiJournalMessage[];
     } catch (e) {
       console.warn('Failed to fetch last incoming messages:', e);
       return [];
@@ -662,8 +684,8 @@ export class GreenApiService {
         return [];
       }
 
-      const list = await response.json();
-      return Array.isArray(list) ? list : [];
+      const list: unknown = await response.json();
+      return parseJournalList(list) as GreenApiJournalMessage[];
     } catch (e) {
       console.warn('Failed to fetch last outgoing messages:', e);
       return [];
@@ -709,8 +731,8 @@ export class GreenApiService {
         return [];
       }
 
-      const list = await response.json();
-      return Array.isArray(list) ? list : [];
+      const list: unknown = await response.json();
+      return parseJournalList(list) as GreenApiJournalMessage[];
     } catch (e) {
       console.warn('Failed to fetch chat history:', e);
       return [];

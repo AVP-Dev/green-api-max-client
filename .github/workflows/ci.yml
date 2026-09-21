@@ -35,6 +35,9 @@ jobs:
       - name: Type check (tsc --noEmit)
         run: npm run lint
 
+      - name: Unit tests (vitest)
+        run: npm test
+
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest

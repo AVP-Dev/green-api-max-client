@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { GreenApiCredentials, PollingStatus } from '../types';
+import { GreenApiCredentials, GreenApiLooseBody, PollingStatus } from '../types';
 import { GreenApiService } from '../services/greenApi';
 import { sanitizePhone } from '../utils/formatters';
+import { parseNotification } from '../utils/greenApiSchemas';
 import { DEFAULT_POLLING_MS } from '../config';
 
 interface UseGreenApiPollingOptions {
@@ -81,7 +82,19 @@ export function useGreenApiPolling({
 
         if (notification && notification.receiptId) {
           const { receiptId, body } = notification;
-          const rawBody = (body || {}) as any;
+          // Zod-гейт: повреждённое тело подтверждаем (ack) и пропускаем, очередь не виснет.
+          if (!parseNotification(notification)) {
+            try {
+              await GreenApiService.deleteNotification(creds, receiptId, abortController.signal);
+            } catch {
+              // ignore ack failure — следующий тик повторит
+            }
+            if (isSubscribed) {
+              timeoutId = setTimeout(executePollCycle, pollingIntervalMs);
+            }
+            return;
+          }
+          const rawBody = (body || {}) as GreenApiLooseBody;
 
           const rawTypeWebhook = rawBody.typeWebhook || '';
           const typeWebhookLower = rawTypeWebhook.toLowerCase();
@@ -133,8 +146,10 @@ export function useGreenApiPolling({
             const file = rawBody.messageData.fileMessageData;
             text = file.caption || (file.fileName ? `📎 ${file.fileName}` : '📎 [Вложение]');
           } else if (!text && (rawBody.fileMessage || rawBody.fileMessageData)) {
-            const file = (rawBody.fileMessage || rawBody.fileMessageData) as any;
-            text = file.caption || (file.fileName ? `📎 ${file.fileName}` : '📎 [Вложение]');
+            const file = (rawBody.fileMessage || rawBody.fileMessageData) as
+              | { caption?: string; fileName?: string }
+              | undefined;
+            text = file?.caption || (file?.fileName ? `📎 ${file.fileName}` : '📎 [Вложение]');
           } else if (!text && rawBody.messageData?.locationMessageData) {
             const loc = rawBody.messageData.locationMessageData;
             text = `📍 [Геолокация: ${loc.nameLocation || loc.address || `${loc.latitude}, ${loc.longitude}`}]`;

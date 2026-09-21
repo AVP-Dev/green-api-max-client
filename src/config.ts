@@ -31,6 +31,19 @@ export function getBuildTimeTrustedOrigins(): string {
 export const POLLING_OPTIONS = [1000, 2000, 5000] as const;
 export const DEFAULT_POLLING_MS = 2000;
 
+/**
+ * BFF (Backend for Frontend) — опциональный прокси для multi-user продакшена.
+ * Когда задан VITE_BFF_URL, клиент может слать send/receive/ack БЕЗ токена:
+ * токен хранится в vault на BFF-сервере (см. bff/README.md).
+ * Build-time, как и остальные VITE_* (docker-compose build.args).
+ */
+export const BFF_URL =
+  ((import.meta.env.VITE_BFF_URL as string | undefined) || '').trim().replace(/\/+$/, '');
+
+export function isBffConfigured(): boolean {
+  return BFF_URL.length > 0;
+}
+
 /** Фоновая сверка журнала тяжелее очереди: минимум 5с на активной вкладке, 10с в фоне. */
 export const BG_SYNC_MIN_ACTIVE_MS = 5000;
 export const BG_SYNC_MIN_HIDDEN_MS = 10000;

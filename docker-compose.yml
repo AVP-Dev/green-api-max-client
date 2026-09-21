@@ -8,6 +8,26 @@ services:
         # Скопируйте .env.example в .env или задайте переменные в окружении/Coolify.
         - VITE_TRUSTED_PARENT_ORIGINS=${VITE_TRUSTED_PARENT_ORIGINS:-}
         - VITE_DEFAULT_API_URL=${VITE_DEFAULT_API_URL:-https://3100.api.green-api.com}
+        - VITE_BFF_URL=${VITE_BFF_URL:-}
+    # BFF-прокси (опционально, по умолчанию не стартует). Запуск:
+    #   BFF_TOKENS_JSON='{"<id>":"<token>"}' docker compose --profile bff up -d --build
+    # См. bff/README.md.
+  # bff:
+  #   image: node:22-bookworm-slim
+  #   container_name: max-web-bff
+  #   restart: unless-stopped
+  #   working_dir: /app
+  #   volumes:
+  #     - ./bff:/app:ro
+  #   command: ["node", "server.mjs"]
+  #   environment:
+  #     - BFF_PORT=3101
+  #     - BFF_TOKENS_JSON=${BFF_TOKENS_JSON:-{}}
+  #     - GREEN_API_BASE=${GREEN_API_BASE:-https://3100.api.green-api.com}
+  #     - BFF_CORS_ORIGINS=${BFF_CORS_ORIGINS:-*}
+  #   ports:
+  #     - "3101:3101"
+  #   profiles: ["bff"]
     container_name: max-web-messenger
     restart: unless-stopped
     ports:

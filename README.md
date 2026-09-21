@@ -26,6 +26,10 @@ A lightweight, production-ready React web client designed to interface with the 
 - **Full Bilingual Localization:** Seamless runtime switching between Russian and English (UI controls, timestamps, status indicators, and alerts).
 - **Responsive Layout:** Adaptive desktop split-pane and mobile-first full-screen viewport with bottom navigation.
 - **PWA & Offline Awareness:** Web App Manifest, service worker caching, and real-time offline status banners.
+- **Dark Theme:** Light / Dark / System modes with pre-paint init (no flash), switch in Settings → Chat.
+- **Resilient Messaging:** Click-to-retry on failed messages, history skeletons, search result counts.
+- **Privacy Controls:** Session vs persistent token storage switch, inactivity auto-lock, message TTL, AES-GCM encrypted backups with import.
+- **Optional BFF Proxy:** Tokenless browser mode (`bff/`, Node 22 dependency-free) for multi-user prod — see `bff/README.md`.
 
 ---
 
@@ -58,6 +62,9 @@ The application will be available at `http://localhost:3000`.
 ```bash
 # Type check TypeScript codebase
 npm run lint
+
+# Run unit tests (vitest)
+npm test
 
 # Compile and generate production bundle in dist/
 npm run build

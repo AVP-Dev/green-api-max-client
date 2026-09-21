@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Class-based тёмная тема (переключатель в Настройках; system по умолчанию). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-max-blue: #471AFF;
   --color-max-blue-hover: #3812DE;

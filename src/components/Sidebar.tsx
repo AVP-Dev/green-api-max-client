@@ -24,6 +24,7 @@ import { formatDisplayPhone, formatMessageTime } from '../utils/formatters';
 import { Avatar } from './Avatar';
 import { MaxLogo } from './MaxLogo';
 import { MobileBottomNav } from './MobileBottomNav';
+import { DialogListSkeleton } from './Skeletons';
 
 interface SidebarProps {
   creds: GreenApiCredentials;
@@ -157,9 +158,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <aside className="w-full h-full flex flex-col bg-white shrink-0 select-none">
+    <aside className="w-full h-full flex flex-col bg-white dark:bg-slate-900 shrink-0 select-none">
       {/* Profile Bar Header */}
-      <div className="p-3.5 border-b border-slate-200 bg-slate-50/80 flex items-center justify-between gap-2">
+      <div className="p-3.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <MaxLogo id="sidebar-logo" size="md" variant="icon" />
           <div className="min-w-0 flex-1">
@@ -231,7 +232,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t.searchPlaceholder}
-            className="w-full pl-9 pr-8 py-2 sm:py-1.5 bg-slate-100/80 border border-transparent hover:border-slate-200 focus:border-[#471AFF] focus:ring-1 focus:ring-[#471AFF]/20 rounded-xl text-[16px] sm:text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white transition-all"
+            className="w-full pl-9 pr-8 py-2 sm:py-1.5 bg-slate-100/80 dark:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 focus:border-[#471AFF] focus:ring-1 focus:ring-[#471AFF]/20 rounded-xl text-[16px] sm:text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:bg-white dark:focus:bg-slate-800 transition-all"
           />
           {searchQuery && (
             <button
@@ -292,9 +293,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       )}
 
+      {/* Счётчик результатов поиска */}
+      {searchQuery.trim() && sortedAndFilteredDialogs.length > 0 && (
+        <div className="px-4 py-1.5 text-[11px] text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
+          {lang === 'ru'
+            ? `Найдено: ${sortedAndFilteredDialogs.length}`
+            : `Found: ${sortedAndFilteredDialogs.length}`}
+        </div>
+      )}
+
       {/* Dialogs List */}
-      <div className="flex-1 overflow-y-auto divide-y divide-slate-100/80">
-        {sortedAndFilteredDialogs.length === 0 ? (
+      <div className="flex-1 overflow-y-auto divide-y divide-slate-100/80 dark:divide-slate-800">
+        {isSyncingMessages && dialogs.length === 0 ? (
+          <DialogListSkeleton rows={6} />
+        ) : sortedAndFilteredDialogs.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center p-6 text-center text-slate-400">
             <div className="w-12 h-12 rounded-2xl bg-indigo-50/70 flex items-center justify-center text-[#471AFF] mb-3">
               <Sparkles className="w-5 h-5" />
@@ -345,10 +357,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() => onSelectChat(dialog.chatId)}
                 className={`group relative flex items-center gap-3 p-3 cursor-pointer transition-colors ${
                   isActive
-                    ? 'bg-indigo-50/70 border-l-[3px] border-[#471AFF]'
+                    ? 'bg-indigo-50/70 dark:bg-indigo-950/50 border-l-[3px] border-[#471AFF]'
                     : dialog.isPinned
-                    ? 'bg-slate-50/50 hover:bg-slate-100/70 border-l-[3px] border-transparent'
-                    : 'hover:bg-slate-50/80 border-l-[3px] border-transparent'
+                    ? 'bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-100/70 dark:hover:bg-slate-800 border-l-[3px] border-transparent'
+                    : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/60 border-l-[3px] border-transparent'
                 }`}
               >
                 {/* Avatar */}
@@ -366,7 +378,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <div className="flex items-center justify-between gap-1 mb-0.5">
                     <span
                       className={`text-xs font-semibold truncate ${
-                        isActive ? 'text-[#471AFF]' : 'text-slate-900'
+                        isActive ? 'text-[#471AFF] dark:text-indigo-300' : 'text-slate-900 dark:text-slate-100'
                       }`}
                       title={hasCustomName ? `${resolvedName} (${displayPhone})` : resolvedName}
                     >
