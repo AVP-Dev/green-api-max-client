@@ -14,9 +14,11 @@ import { NewChatModal } from './components/NewChatModal';
 import { SettingsModal } from './components/SettingsModal';
 import { AddressBookModal } from './components/AddressBookModal';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { PopupNotification, PopupNotificationData } from './components/PopupNotification';
+import { useTabNotification } from './hooks/useTabNotification';
 import { useGreenApiPolling } from './hooks/useGreenApiPolling';
 import { GreenApiService, DEFAULT_API_URL } from './services/greenApi';
-import { sanitizePhone } from './utils/formatters';
+import { sanitizePhone, formatDisplayPhone } from './utils/formatters';
 import { playNotificationSound } from './utils/sound';
 import { safeStorage } from './utils/storage';
 import { translations } from './i18n/translations';
@@ -193,6 +195,8 @@ export default function App() {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [popupNotification, setPopupNotification] = useState<PopupNotificationData | null>(null);
+  const enrichedChatIdsRef = useRef<Set<string>>(new Set());
   const [typingChats, setTypingChats] = useState<Record<string, boolean>>({});
   const typingTimeoutsRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
@@ -278,6 +282,44 @@ export default function App() {
     } else {
       safeStorage.removeItem(STORAGE_KEYS.ACTIVE_CHAT);
     }
+  }, [activeChatId]);
+
+  // Total unread messages across all conversations for browser tab badge & title
+  const totalUnreadCount = useMemo(() => {
+    return dialogs.reduce((acc, d) => acc + (d.unreadCount || 0), 0);
+  }, [dialogs]);
+
+  // Browser Tab Notification controller (Page title prefix + Dynamic badged Favicon)
+  const { notifyNewIncoming } = useTabNotification({
+    unreadCount: totalUnreadCount,
+    baseTitle: 'MAX Web Messenger',
+    lang,
+  });
+
+  // When tab/window gains focus or becomes visible, mark active chat as read
+  useEffect(() => {
+    const handleClearActiveUnread = () => {
+      if (activeChatId) {
+        setDialogs((prev) =>
+          prev.map((d) =>
+            d.chatId === activeChatId && d.unreadCount > 0 ? { ...d, unreadCount: 0 } : d
+          )
+        );
+      }
+    };
+
+    window.addEventListener('focus', handleClearActiveUnread);
+    const handleVisibilityChange = () => {
+      if (typeof document !== 'undefined' && !document.hidden) {
+        handleClearActiveUnread();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleClearActiveUnread);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [activeChatId]);
 
   const toggleLanguage = () => {
@@ -440,6 +482,69 @@ export default function App() {
     }
   }, [creds, lang]);
 
+  // Auto-enrich contact information using GREEN-API getContactInfo
+  const enrichContactInfo = useCallback(
+    async (chatId: string) => {
+      const cleanId = sanitizePhone(chatId);
+      if (!creds?.idInstance || !creds?.apiTokenInstance || !cleanId || enrichedChatIdsRef.current.has(cleanId)) {
+        return;
+      }
+      enrichedChatIdsRef.current.add(cleanId);
+      try {
+        const info = await GreenApiService.getContactInfo(creds, cleanId);
+        if (info && (info.contactName || info.name || info.avatar)) {
+          const bestName = info.contactName || info.name;
+          if (bestName) {
+            setContacts((prev) => {
+              const existing = prev.find((c) => c.id === cleanId);
+              if (existing) {
+                return prev.map((c) =>
+                  c.id === cleanId
+                    ? {
+                        ...c,
+                        name: info.name || c.name,
+                        contactName: info.contactName || c.contactName || info.name,
+                        avatarUrl: info.avatar || c.avatarUrl,
+                        updatedAt: Date.now(),
+                      }
+                    : c
+                );
+              }
+              return [
+                ...prev,
+                {
+                  id: cleanId,
+                  name: info.name,
+                  contactName: bestName,
+                  avatarUrl: info.avatar,
+                  source: 'green_api',
+                  updatedAt: Date.now(),
+                },
+              ];
+            });
+
+            setDialogs((prev) =>
+              prev.map((d) =>
+                d.chatId === cleanId
+                  ? { ...d, displayName: d.displayName || bestName }
+                  : d
+              )
+            );
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to enrich contact info:', err);
+      }
+    },
+    [creds]
+  );
+
+  useEffect(() => {
+    if (activeChatId) {
+      enrichContactInfo(activeChatId);
+    }
+  }, [activeChatId, enrichContactInfo]);
+
   // 7. Incoming message processor from long-polling hook & background reconciliation
   const handleIncomingMessage = useCallback(
     (newMsg: {
@@ -514,9 +619,14 @@ export default function App() {
       }
 
       // Update dialogs
+      const isDocumentActive =
+        typeof document !== 'undefined' &&
+        !document.hidden &&
+        (typeof document.hasFocus === 'function' ? document.hasFocus() : true);
+      const isActivelyViewing = activeChatId === cleanChatId && isDocumentActive;
+
       setDialogs((prev) => {
         const existingIndex = prev.findIndex((d) => d.chatId === cleanChatId);
-        const isCurrentActive = activeChatId === cleanChatId;
 
         let updatedList: ChatDialog[];
         if (existingIndex >= 0) {
@@ -528,7 +638,10 @@ export default function App() {
             lastMessageText: newMsg.text,
             lastMessageTimestamp: newMsg.timestamp,
             lastMessageDirection: direction,
-            unreadCount: (isCurrentActive || !isIncoming) ? (existing.unreadCount || 0) : (existing.unreadCount || 0) + 1,
+            unreadCount:
+              isActivelyViewing || !isIncoming
+                ? existing.unreadCount || 0
+                : (existing.unreadCount || 0) + 1,
           };
           updatedList = updated;
         } else {
@@ -539,7 +652,7 @@ export default function App() {
             lastMessageText: newMsg.text,
             lastMessageTimestamp: newMsg.timestamp,
             lastMessageDirection: direction,
-            unreadCount: (isCurrentActive || !isIncoming) ? 0 : 1,
+            unreadCount: isActivelyViewing || !isIncoming ? 0 : 1,
             isPinned: false,
           };
           updatedList = [newDialog, ...prev];
@@ -562,6 +675,46 @@ export default function App() {
       // Sound alert if enabled and incoming and not silent
       if (isIncoming && settings.soundEnabled && !newMsg.silent) {
         playNotificationSound();
+      }
+
+      // Popup notification & native desktop notification for incoming messages
+      if (isIncoming) {
+        enrichContactInfo(cleanChatId);
+
+        if (!newMsg.silent) {
+          const contactObj = contacts.find((c) => c.id === cleanChatId);
+          const resolvedSender = contactObj?.contactName || contactObj?.name || newMsg.senderName;
+
+          // Notify browser tab (flashing title if tab is inactive)
+          notifyNewIncoming(resolvedSender);
+
+          setPopupNotification({
+            id: newMsg.id,
+            chatId: cleanChatId,
+            senderName: resolvedSender,
+            text: newMsg.text,
+            timestamp: newMsg.timestamp,
+            avatarUrl: contactObj?.avatarUrl,
+          });
+
+          // Browser desktop notification
+          if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+            try {
+              const displayTitle = resolvedSender || formatDisplayPhone(cleanChatId);
+              const notif = new Notification(displayTitle, {
+                body: newMsg.text,
+                icon: contactObj?.avatarUrl || '/favicon.ico',
+              });
+              notif.onclick = () => {
+                window.focus();
+                setActiveChatId(cleanChatId);
+                notif.close();
+              };
+            } catch (err) {
+              console.warn('Desktop notification error:', err);
+            }
+          }
+        }
       }
 
       // Dispatch postMessage for embedded CRM/app integration
@@ -594,7 +747,7 @@ export default function App() {
 
       return true;
     },
-    [activeChatId, lang, settings.soundEnabled]
+    [activeChatId, lang, settings.soundEnabled, contacts, enrichContactInfo, notifyNewIncoming]
   );
 
   // Journal & history synchronization engines
@@ -1284,14 +1437,23 @@ export default function App() {
             settings={settings}
             onOpenSettings={() => setIsSettingsModalOpen(true)}
             onOpenAddressBook={() => setIsAddressBookOpen(true)}
-            onQuickSaveContact={(id, name) =>
+            onQuickSaveContact={(id, name, _phone, note) => {
               handleSaveContact({
                 id,
                 contactName: name,
+                note: note || undefined,
                 source: 'manual',
                 updatedAt: Date.now(),
-              })
-            }
+              });
+              setDialogs((prev) =>
+                prev.map((d) => (d.chatId === id ? { ...d, displayName: name } : d))
+              );
+              showToast(
+                lang === 'ru'
+                  ? `Собеседник «${name}» сохранён`
+                  : `Contact "${name}" saved`
+              );
+            }}
             contact={activeChatId ? contactsMap.get(activeChatId) : undefined}
             isPinned={activeDialog?.isPinned || false}
             onTogglePin={handleTogglePinChat}
@@ -1345,6 +1507,17 @@ export default function App() {
         activeChatId={activeChatId}
         onSyncMessages={() => syncRecentMessages(true)}
         isSyncingMessages={isSyncingMessages}
+      />
+
+      {/* Popup Notification for Incoming Messages */}
+      <PopupNotification
+        notification={popupNotification}
+        lang={lang}
+        onOpenChat={(cid) => {
+          handleSelectChat(cid);
+          setPopupNotification(null);
+        }}
+        onDismiss={() => setPopupNotification(null)}
       />
     </div>
   );

@@ -17,7 +17,8 @@ import {
   X,
   BookUser,
   UserPlus,
-  RotateCw
+  RotateCw,
+  Edit2
 } from 'lucide-react';
 import { AppSettings, ChatMessage, Contact, Language } from '../types';
 import { translations } from '../i18n/translations';
@@ -40,7 +41,7 @@ interface ChatViewProps {
   settings?: AppSettings;
   onOpenSettings?: () => void;
   onOpenAddressBook?: () => void;
-  onQuickSaveContact?: (chatId: string, name: string) => void;
+  onQuickSaveContact?: (chatId: string, name: string, phone?: string, note?: string) => void;
   contact?: Contact;
   isPinned?: boolean;
   onTogglePin?: (chatId: string) => void;
@@ -76,6 +77,26 @@ export const ChatView: React.FC<ChatViewProps> = ({
   const [inputText, setInputText] = useState('');
   const [showOptions, setShowOptions] = useState(false);
   const [showMobileActions, setShowMobileActions] = useState(false);
+  const [isEditContactOpen, setIsEditContactOpen] = useState(false);
+  const [editName, setEditName] = useState(contact?.contactName || contact?.name || '');
+  const [editPhone, setEditPhone] = useState(chatId || '');
+  const [editNote, setEditNote] = useState(contact?.note || contact?.company || '');
+
+  useEffect(() => {
+    setEditName(contact?.contactName || contact?.name || '');
+    setEditPhone(chatId || '');
+    setEditNote(contact?.note || contact?.company || '');
+  }, [contact, chatId]);
+
+  const handleSaveContactDetails = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (onQuickSaveContact && chatId) {
+      const displayPhone = settings?.showPhoneFormatting !== false ? formatDisplayPhone(chatId) : chatId;
+      onQuickSaveContact(chatId, editName.trim() || displayPhone, editPhone.trim(), editNote.trim());
+    }
+    setIsEditContactOpen(false);
+  };
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const lastTypingSentRef = useRef<number>(0);
@@ -206,6 +227,14 @@ export const ChatView: React.FC<ChatViewProps> = ({
                     <Pin className="w-3.5 h-3.5 fill-[#471AFF] rotate-45" />
                   </span>
                 )}
+                <button
+                  type="button"
+                  onClick={() => setIsEditContactOpen(true)}
+                  className="p-1 rounded-md text-slate-400 hover:text-[#471AFF] hover:bg-indigo-50 transition-colors cursor-pointer shrink-0"
+                  title={lang === 'ru' ? 'Изменить имя или реальный номер' : 'Edit name or real number'}
+                >
+                  <Edit2 className="w-3 h-3" />
+                </button>
               </h2>
               {/* Secondary phone or notebook status */}
               {(contact?.contactName || contact?.name) ? (
@@ -643,6 +672,88 @@ export const ChatView: React.FC<ChatViewProps> = ({
           </button>
         </form>
       </div>
+
+      {/* Quick Edit Contact Name & Real Phone Modal */}
+      {isEditContactOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between p-4 border-b border-slate-100">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Edit2 className="w-4 h-4 text-[#471AFF]" />
+                <span>{lang === 'ru' ? 'Редактировать контакт' : 'Edit Contact'}</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsEditContactOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveContactDetails} className="p-4 space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  {lang === 'ru' ? 'Имя или псевдоним собеседника' : 'Contact Name / Nickname'}
+                </label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder={lang === 'ru' ? 'например, Алексей' : 'e.g. Alex'}
+                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:outline-none focus:border-[#471AFF] focus:ring-1 focus:ring-[#471AFF]"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  {lang === 'ru' ? 'Реальный номер телефона или ID' : 'Real Phone Number or ID'}
+                </label>
+                <input
+                  type="text"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  placeholder="+375 29 123-45-67 или 454641449"
+                  className="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-xl focus:outline-none focus:border-[#471AFF] focus:ring-1 focus:ring-[#471AFF]"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  {lang === 'ru' ? `Шлюз GREEN-API ID: ${chatId}` : `GREEN-API ID: ${chatId}`}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  {lang === 'ru' ? 'Заметка / Компания' : 'Note / Company'}
+                </label>
+                <input
+                  type="text"
+                  value={editNote}
+                  onChange={(e) => setEditNote(e.target.value)}
+                  placeholder={lang === 'ru' ? 'Клиент, коллега...' : 'Client, colleague...'}
+                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:outline-none focus:border-[#471AFF] focus:ring-1 focus:ring-[#471AFF]"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditContactOpen(false)}
+                  className="px-3 py-1.5 rounded-xl text-xs text-slate-600 hover:bg-slate-100 font-medium cursor-pointer"
+                >
+                  {lang === 'ru' ? 'Отмена' : 'Cancel'}
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 rounded-xl text-xs bg-gradient-to-r from-[#471AFF] to-indigo-600 text-white font-semibold hover:opacity-95 shadow-xs cursor-pointer"
+                >
+                  {lang === 'ru' ? 'Сохранить' : 'Save'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

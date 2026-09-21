@@ -135,29 +135,53 @@ export function sanitizePhone(input: string): string {
 }
 
 /**
- * Formats a plain phone number for elegant human reading
+ * Formats a plain phone number or user/chat ID for elegant human reading
  */
 export function formatDisplayPhone(rawPhone: string): string {
   const digits = sanitizePhone(rawPhone);
   if (!digits) return rawPhone;
 
-  // Russian standard 11 digits starting with 7
-  if (digits.length === 11 && (digits.startsWith('7') || digits.startsWith('8'))) {
-    const prefix = digits.startsWith('7') ? '+7' : '8';
-    return `${prefix} (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7, 9)}-${digits.slice(9, 11)}`;
+  // 1. Belarus 12 digits (+375 XX XXX-XX-XX)
+  if (digits.length === 12 && digits.startsWith('375')) {
+    return `+375 (${digits.slice(3, 5)}) ${digits.slice(5, 8)}-${digits.slice(8, 10)}-${digits.slice(10, 12)}`;
   }
 
-  // 10 digits
-  if (digits.length === 10) {
+  // 2. Belarus mobile 9 digits without 375 (e.g. 29XXXXXXX, 44XXXXXXX, 33XXXXXXX, 25XXXXXXX)
+  if (digits.length === 9 && (digits.startsWith('29') || digits.startsWith('44') || digits.startsWith('33') || digits.startsWith('25'))) {
+    return `+375 (${digits.slice(0, 2)}) ${digits.slice(2, 5)}-${digits.slice(5, 7)}-${digits.slice(7, 9)}`;
+  }
+
+  // 3. Ukraine 12 digits (+380 XX XXX-XX-XX)
+  if (digits.length === 12 && digits.startsWith('380')) {
+    return `+380 (${digits.slice(3, 5)}) ${digits.slice(5, 8)}-${digits.slice(8, 10)}-${digits.slice(10, 12)}`;
+  }
+
+  // 4. Russia / Kazakhstan standard 11 digits starting with 7 or 8 (+7 (XXX) XXX-XX-XX)
+  if (digits.length === 11 && (digits.startsWith('7') || digits.startsWith('8'))) {
+    return `+7 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7, 9)}-${digits.slice(9, 11)}`;
+  }
+
+  // 5. Standard 10 digits mobile (common in Russia without +7, e.g. 9161234567)
+  if (digits.length === 10 && (digits.startsWith('9') || digits.startsWith('8') || digits.startsWith('4') || digits.startsWith('3'))) {
     return `+7 (${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 8)}-${digits.slice(8, 10)}`;
   }
 
-  // Generic international formatting
-  if (digits.length > 7) {
+  // 6. USA / North America 11 digits starting with 1 (+1 (XXX) XXX-XXXX)
+  if (digits.length === 11 && digits.startsWith('1')) {
+    return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7, 11)}`;
+  }
+
+  // 7. General international full phone number (11 to 14 digits)
+  if (digits.length >= 11 && digits.length <= 14) {
     return `+${digits.slice(0, digits.length - 7)} ${digits.slice(digits.length - 7, digits.length - 4)} ${digits.slice(digits.length - 4)}`;
   }
 
-  return digits;
+  // 8. Telegram User ID / MAX User ID (e.g. 5 to 10 digits not matching country codes, like "454641449")
+  if (digits.length <= 10) {
+    return `ID: ${digits}`;
+  }
+
+  return `+${digits}`;
 }
 
 /**

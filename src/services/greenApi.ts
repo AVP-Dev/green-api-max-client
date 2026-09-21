@@ -639,4 +639,26 @@ export class GreenApiService {
       return [];
     }
   }
+
+  /**
+   * Fetches recent chats list with contact names from GREEN-API
+   */
+  static async getChats(
+    creds: GreenApiCredentials,
+    count: number = 50,
+    signal?: AbortSignal
+  ): Promise<Array<{ id: string; name?: string }>> {
+    const { idInstance, apiTokenInstance } = creds;
+    const baseUrl = getBaseUrl(creds);
+    const url = `${baseUrl}/waInstance${idInstance.trim()}/getChats/${apiTokenInstance.trim()}?count=${count}`;
+
+    try {
+      const response = await fetch(url, { signal });
+      if (!response.ok) return [];
+      const list = await response.json();
+      return Array.isArray(list) ? list : [];
+    } catch {
+      return [];
+    }
+  }
 }
