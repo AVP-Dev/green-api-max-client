@@ -43,21 +43,20 @@ import {
   validateIncomingMessage,
 } from './utils/postMessageSecurity';
 import { translations } from './i18n/translations';
-
-const STORAGE_KEYS = {
-  // CREDS вынесены в utils/credentialStorage (localStorage vs sessionStorage по флагу "Запомнить").
-  ACTIVE_CHAT: 'max_messenger_active_chat',
-  DIALOGS: 'max_messenger_dialogs',
-  MESSAGES: 'max_messenger_messages',
-  LANG: 'max_messenger_lang',
-  SETTINGS: 'max_messenger_settings',
-  CONTACTS: 'max_messenger_contacts',
-  LAST_SYNC: 'max_messenger_last_sync',
-  QUICK_REPLIES: 'max_messenger_quick_replies',
-};
+import {
+  APP_VERSION,
+  BG_SYNC_MIN_ACTIVE_MS,
+  BG_SYNC_MIN_HIDDEN_MS,
+  DEFAULT_POLLING_MS,
+  DIALOG_RETENTION_LIMIT,
+  MAX_MESSAGE_LENGTH,
+  MESSAGE_RETENTION_LIMIT,
+  STORAGE_KEYS,
+  sanitizePollingInterval,
+} from './config';
 
 const DEFAULT_SETTINGS: AppSettings = {
-  pollingIntervalMs: 2000,
+  pollingIntervalMs: DEFAULT_POLLING_MS,
   soundEnabled: true,
   sendShortcut: 'enter',
   fontSize: 'medium',
@@ -89,11 +88,18 @@ export default function App() {
 
   const t = translations[lang];
 
-  // 1.1 App Settings state
+  // 1.1 App Settings state (polling санитизируем — битый localStorage не должен ронять опрос)
   const [settings, setSettings] = useState<AppSettings>(() => {
     try {
       const saved = safeStorage.getItem(STORAGE_KEYS.SETTINGS);
-      if (saved) return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          ...DEFAULT_SETTINGS,
+          ...parsed,
+          pollingIntervalMs: sanitizePollingInterval(parsed?.pollingIntervalMs),
+        };
+      }
     } catch {
       // ignore
     }
@@ -308,12 +314,19 @@ export default function App() {
     }
   }, [creds, credsPersistent]);
 
+  // Retention caps — защита от QuotaExceededError: храним только свежие данные.
   useEffect(() => {
-    safeStorage.setItem(STORAGE_KEYS.DIALOGS, JSON.stringify(dialogs));
+    const capped =
+      dialogs.length > DIALOG_RETENTION_LIMIT ? dialogs.slice(0, DIALOG_RETENTION_LIMIT) : dialogs;
+    safeStorage.setItem(STORAGE_KEYS.DIALOGS, JSON.stringify(capped));
   }, [dialogs]);
 
   useEffect(() => {
-    safeStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(messages));
+    const capped =
+      messages.length > MESSAGE_RETENTION_LIMIT
+        ? messages.slice(-MESSAGE_RETENTION_LIMIT)
+        : messages;
+    safeStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(capped));
   }, [messages]);
 
   useEffect(() => {
@@ -1086,11 +1099,11 @@ export default function App() {
 
     // Интервал наследуется от пользовательской настройки long-poll, но не чаще 5с
     // (журнал тяжелее очереди). В фоне — минимум 10с.
-    const baseMs = Number.isFinite(settings.pollingIntervalMs) ? settings.pollingIntervalMs : 2000;
+    const baseMs = sanitizePollingInterval(settings.pollingIntervalMs);
     const intervalMs =
       typeof document !== 'undefined' && document.visibilityState === 'visible'
-        ? Math.max(5000, baseMs * 2)
-        : Math.max(10000, baseMs * 3);
+        ? Math.max(BG_SYNC_MIN_ACTIVE_MS, baseMs * 2)
+        : Math.max(BG_SYNC_MIN_HIDDEN_MS, baseMs * 3);
     const intervalId = setInterval(() => {
       performBackgroundCheck();
     }, intervalMs);
@@ -1130,7 +1143,7 @@ export default function App() {
   const handleSendMessage = async (rawText: string) => {
     if (!creds || !activeChatId || !rawText.trim()) return;
     // Defense-in-depth: режем сверхдлинные тексты до лимита мессенджера (DoS/API-abuse).
-    const text = rawText.trim().slice(0, 4096);
+    const text = rawText.trim().slice(0, MAX_MESSAGE_LENGTH);
     if (!text) return;
 
     const tempId = `out_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
@@ -1296,7 +1309,7 @@ export default function App() {
       // ?text= — черновик для поля ввода (генераторы IntegrationPanel/Modal).
       // Хранится как dialog.draft, в сеть ничего не отправляется до Enter.
       const urlTextRaw = params.get('text');
-      const urlText = urlTextRaw ? urlTextRaw.trim().slice(0, 4096) : '';
+      const urlText = urlTextRaw ? urlTextRaw.trim().slice(0, MAX_MESSAGE_LENGTH) : '';
 
       if (urlPhone) {
         const cleanPhone = sanitizePhone(urlPhone);
@@ -1344,8 +1357,8 @@ export default function App() {
           const chatId = toSafePayloadString(payload.chatId);
           const name = toSafePayloadString(payload.name);
           // text в MAX_OPEN_CHAT — черновик (не авто-отправка; для отправки есть MAX_SEND_MESSAGE).
-          const draftRaw = toSafePayloadString(payload.text, 4096);
-          const draft = draftRaw ? draftRaw.slice(0, 4096) : null;
+          const draftRaw = toSafePayloadString(payload.text, MAX_MESSAGE_LENGTH);
+          const draft = draftRaw ? draftRaw.slice(0, MAX_MESSAGE_LENGTH) : null;
           if (chatId) {
             const clean = sanitizePhone(chatId);
             if (clean) {
@@ -1424,7 +1437,7 @@ export default function App() {
         type: 'MAX_READY',
         payload: {
           app: 'MAX Web Messenger for GREEN-API',
-          version: '2.0.0',
+          version: APP_VERSION,
           connected: !!creds,
         },
       });
@@ -1492,6 +1505,27 @@ export default function App() {
     saveCreds(newCreds, credsPersistent);
     showToast(lang === 'ru' ? 'Параметры связи и шлюза обновлены' : 'Connection and gateway settings updated');
   };
+
+  // Переключение sessionStorage <-> localStorage для уже введённых ключей.
+  const handleUpdateCredsPersistence = useCallback(
+    (persistent: boolean) => {
+      setCredsPersistent(persistent);
+      setCreds((current) => {
+        if (current) saveCreds(current, persistent);
+        return current;
+      });
+      showToast(
+        persistent
+          ? lang === 'ru'
+            ? 'Ключи будут сохраняться на устройстве (localStorage)'
+            : 'Keys will persist on this device (localStorage)'
+          : lang === 'ru'
+            ? 'Ключи только до закрытия вкладки (sessionStorage)'
+            : 'Keys kept only until the tab closes (sessionStorage)'
+      );
+    },
+    [lang]
+  );
 
   // If not authenticated, display Auth Screen
   if (!creds) {
@@ -1700,6 +1734,8 @@ export default function App() {
             onOpenQuickReplies={() => setIsQuickRepliesModalOpen(true)}
             quickRepliesCount={quickReplies.length}
             onTestNotification={handleTestNotification}
+            credsPersistent={credsPersistent}
+            onUpdateCredsPersistence={handleUpdateCredsPersistence}
           />
         )}
 

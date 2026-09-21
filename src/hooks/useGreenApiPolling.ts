@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { GreenApiCredentials, PollingStatus } from '../types';
 import { GreenApiService } from '../services/greenApi';
 import { sanitizePhone } from '../utils/formatters';
+import { DEFAULT_POLLING_MS } from '../config';
 
 interface UseGreenApiPollingOptions {
   creds: GreenApiCredentials | null;
@@ -23,7 +24,7 @@ interface UseGreenApiPollingOptions {
 export function useGreenApiPolling({
   creds,
   enabled = true,
-  pollingIntervalMs = 2000,
+  pollingIntervalMs = DEFAULT_POLLING_MS,
   onIncomingMessage,
   onTyping,
   onReceiptAcknowledged,

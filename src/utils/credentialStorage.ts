@@ -1,5 +1,6 @@
 import type { GreenApiCredentials } from '../types';
 import { safeStorage } from './storage';
+import { STORAGE_KEYS } from '../config';
 
 /**
  * Безопасное хранение кредов GREEN-API.
@@ -12,7 +13,7 @@ import { safeStorage } from './storage';
  *
  * Ключ один и тот же для обратной совместимости со старыми установками.
  */
-export const CREDS_KEY = 'max_messenger_creds';
+export const CREDS_KEY = STORAGE_KEYS.CREDS;
 
 const sessionMemory: Record<string, string> = {};
 

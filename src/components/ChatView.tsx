@@ -30,6 +30,7 @@ import {
 } from '../utils/formatters';
 import { Avatar } from './Avatar';
 import { MaxLogo } from './MaxLogo';
+import { MAX_MESSAGE_LENGTH } from '../config';
 
 interface ChatViewProps {
   chatId: string | null;
@@ -120,7 +121,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
     if (consumedDraftRef.current === key) return;
     setInputText((prev) => {
       if (prev.trim()) return prev;
-      return initialDraft.slice(0, 4096);
+      return initialDraft.slice(0, MAX_MESSAGE_LENGTH);
     });
     consumedDraftRef.current = key;
     onDraftConsumed?.(chatId);
@@ -158,8 +159,6 @@ export const ChatView: React.FC<ChatViewProps> = ({
       </div>
     );
   }
-
-  const MAX_MESSAGE_LENGTH = 4096;
 
   const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -730,10 +729,10 @@ export const ChatView: React.FC<ChatViewProps> = ({
             type="text"
             disabled={isSending}
             value={inputText}
-            maxLength={4096}
+            maxLength={MAX_MESSAGE_LENGTH}
             autoComplete="off"
             onChange={(e) => {
-              const val = e.target.value.slice(0, 4096);
+              const val = e.target.value.slice(0, MAX_MESSAGE_LENGTH);
               setInputText(val);
               if (onSendTyping && chatId && val.trim() && Date.now() - lastTypingSentRef.current > 3500) {
                 lastTypingSentRef.current = Date.now();

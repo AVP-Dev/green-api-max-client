@@ -3,6 +3,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # Build-time Vite env (вшиваются в JS-бандл при сборке).
+        # Скопируйте .env.example в .env или задайте переменные в окружении/Coolify.
+        - VITE_TRUSTED_PARENT_ORIGINS=${VITE_TRUSTED_PARENT_ORIGINS:-}
+        - VITE_DEFAULT_API_URL=${VITE_DEFAULT_API_URL:-https://3100.api.green-api.com}
     container_name: max-web-messenger
     restart: unless-stopped
     ports:

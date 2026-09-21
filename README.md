@@ -79,6 +79,21 @@ docker build -t max-web-messenger .
 docker run -d -p 3000:80 --name max-web-messenger max-web-messenger
 ```
 
+### Environment (build-time)
+
+Copy `.env.example` to `.env` before building. `VITE_*` variables are embedded
+by Vite at **build time** — runtime `environment:` does not affect them, use
+`docker-compose build.args` (already wired):
+
+```bash
+cp .env.example .env
+# VITE_TRUSTED_PARENT_ORIGINS=https://crm.example.com,https://portal.example.com
+# VITE_DEFAULT_API_URL=https://3100.api.green-api.com
+```
+
+Embed allowlist can also be passed per-URL: `?parentOrigin=https://crm.example.com`.
+Without it the widget drops inbound postMessage commands in production (fail-closed).
+
 ---
 
 ## Continuous Integration & Deployment (CI/CD)

@@ -36,12 +36,18 @@ export const IntegrationPanel: React.FC<IntegrationPanelProps> = ({
   const [embedMode, setEmbedMode] = useState(true);
   const [customPhone, setCustomPhone] = useState(activeChatId || '79991234567');
   const [prefillMessage, setPrefillMessage] = useState('Здравствуйте! Сообщение из CRM.');
+  // Доверенный origin родителя для postMessage-allowlist (?parentOrigin=).
+  // Пусто = виджет в dev принимает всех (с warn), в prod — отбрасывает все входящие.
+  const [parentOrigin, setParentOrigin] = useState('');
 
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://web.max.ru';
   const baseUrl = getBaseUrl(creds);
 
   // Generate embed URL
   const queryParams = new URLSearchParams();
+  if (parentOrigin.trim()) {
+    queryParams.set('parentOrigin', parentOrigin.trim().replace(/\/+$/, ''));
+  }
   if (includeCreds && creds) {
     queryParams.set('idInstance', creds.idInstance);
     queryParams.set('apiTokenInstance', creds.apiTokenInstance);
@@ -118,7 +124,20 @@ maxIframe.postMessage({
     chatId: '79991234567',
     text: 'Ваш курьер прибудет через 15 минут.'
   }
-}, MAX_WIDGET_ORIGIN);`;
+}, MAX_WIDGET_ORIGIN);
+
+// Передать ключи шлюза без URL (рекомендуется вместо ?idInstance= в адресной строке):
+maxIframe.postMessage({
+  type: 'MAX_SET_CREDS',
+  payload: {
+    idInstance: '310022742216',
+    apiTokenInstance: '***',
+    apiUrl: 'https://3100.api.green-api.com' // опционально, обязан пройти allowlist *.green-api.com
+  }
+}, MAX_WIDGET_ORIGIN);
+
+// Запустить синхронизацию контактов:
+maxIframe.postMessage({ type: 'MAX_SYNC_CONTACTS', payload: {} }, MAX_WIDGET_ORIGIN);`;
 
   const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -262,6 +281,24 @@ maxIframe.postMessage({
                     className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
                   />
                 </div>
+
+                <div className="col-span-1 sm:col-span-2">
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                    {lang === 'ru' ? 'Доверенный origin родителя (parentOrigin):' : 'Trusted parent origin (parentOrigin):'}
+                  </label>
+                  <input
+                    type="text"
+                    value={parentOrigin}
+                    onChange={(e) => setParentOrigin(e.target.value)}
+                    placeholder="https://crm.example.com"
+                    className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-mono"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    {lang === 'ru'
+                      ? 'Без него postMessage в проде отбрасывает входящие (fail-closed). Дублируется сборкой VITE_TRUSTED_PARENT_ORIGINS.'
+                      : 'Without it postMessage drops inbound commands in prod (fail-closed). Mirrored by build-time VITE_TRUSTED_PARENT_ORIGINS.'}
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -382,6 +419,12 @@ maxIframe.postMessage({
                 <div className="col-span-3 font-mono text-[#471AFF] font-bold">embedded</div>
                 <div className="col-span-4 font-mono text-slate-500">true</div>
                 <div className="col-span-5 text-slate-600">Скрывает внешние рамки для компактного встраивания в окно CRM</div>
+              </div>
+
+              <div className="p-3 grid grid-cols-12 gap-2 items-center text-slate-700">
+                <div className="col-span-3 font-mono text-[#471AFF] font-bold">parentOrigin</div>
+                <div className="col-span-4 font-mono text-slate-500">https://crm.example.com</div>
+                <div className="col-span-5 text-slate-600">Доверенный origin родителя для postMessage (fail-closed в проде без него)</div>
               </div>
             </div>
           </div>

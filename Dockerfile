@@ -7,6 +7,13 @@ FROM node:22-bookworm-slim AS builder
 
 WORKDIR /app
 
+# Build-time Vite env (вшиваются в бандл; runtime environment: для них не работает).
+# Значения приходят из docker-compose build.args или --build-arg.
+ARG VITE_TRUSTED_PARENT_ORIGINS=""
+ARG VITE_DEFAULT_API_URL="https://3100.api.green-api.com"
+ENV VITE_TRUSTED_PARENT_ORIGINS=$VITE_TRUSTED_PARENT_ORIGINS
+ENV VITE_DEFAULT_API_URL=$VITE_DEFAULT_API_URL
+
 # Copy dependency manifests (package-lock.json required for deterministic npm ci)
 COPY package.json package-lock.json ./
 

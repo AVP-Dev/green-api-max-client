@@ -36,6 +36,7 @@ import {
   requestBrowserNotificationPermission,
 } from '../utils/notifications';
 import { IntegrationPanel } from './IntegrationPanel';
+import { APP_VERSION } from '../config';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -58,6 +59,9 @@ interface SettingsModalProps {
   onTestNotification?: () => void;
   /** Forced native OS test (bypasses focus routing). Returns true when shown. */
   onTestBrowserNotification?: () => boolean;
+  /** Session vs persistent credential storage («Запомнить на этом устройстве»). */
+  credsPersistent?: boolean;
+  onUpdateCredsPersistence?: (persistent: boolean) => void;
 }
 
 type TabType = 'chat' | 'notifications' | 'connection' | 'integration' | 'data';
@@ -82,6 +86,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   quickRepliesCount,
   onTestNotification,
   onTestBrowserNotification,
+  credsPersistent = true,
+  onUpdateCredsPersistence,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('chat');
   const [checkingStatus, setCheckingStatus] = useState(false);
@@ -1296,6 +1302,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </p>
                 </div>
 
+                {/* Credential storage: session vs persistent */}
+                {onUpdateCredsPersistence && (
+                  <label className="flex items-start justify-between gap-3 p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 cursor-pointer select-none">
+                    <div className="min-w-0 flex-1">
+                      <span className="text-xs font-semibold text-slate-700 block break-words">
+                        {lang === 'ru' ? 'Запомнить на этом устройстве' : 'Remember on this device'}
+                      </span>
+                      <span className="text-[11px] text-slate-500 block mt-0.5 break-words">
+                        {lang === 'ru'
+                          ? 'Выкл — ключи только до закрытия вкладки (sessionStorage, безопаснее). Вкл — localStorage: удобно, но при XSS токен прочитает любой скрипт.'
+                          : 'Off — keys live until the tab closes (sessionStorage, safer). On — localStorage: convenient, but any script can read the token under XSS.'}
+                      </span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={credsPersistent}
+                      onChange={(e) => onUpdateCredsPersistence(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded accent-[#471AFF] cursor-pointer shrink-0"
+                    />
+                  </label>
+                )}
+
                 {/* Export Data */}
                 <div className="flex flex-col gap-3 p-3.5 rounded-xl border border-slate-100 bg-slate-50/50">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1442,7 +1470,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         {/* Modal Footer */}
         <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/80 flex items-center justify-between shrink-0">
           <div className="text-[11px] text-slate-400 font-mono">
-            MAX Web • v1.2.0
+            MAX Web • v{APP_VERSION}
           </div>
           <button
             id="save-settings-button"

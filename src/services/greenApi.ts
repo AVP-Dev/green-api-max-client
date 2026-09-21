@@ -1,7 +1,9 @@
 import { GreenApiCredentials, GreenApiNotification, GreenApiJournalMessage } from '../types';
 import { sanitizePhone } from '../utils/formatters';
+import { DEFAULT_API_URL as CONFIG_DEFAULT_API_URL } from '../config';
 
-export const DEFAULT_API_URL = 'https://3100.api.green-api.com';
+// Re-export единого дефолта из src/config.ts (источник truth + VITE_DEFAULT_API_URL).
+export const DEFAULT_API_URL = CONFIG_DEFAULT_API_URL;
 
 /**
  * Allowlist шлюзов GREEN-API.
@@ -180,8 +182,9 @@ export class GreenApiService {
 
     const baseUrl = getBaseUrl(creds);
     const url = `${baseUrl}/waInstance${idInstance.trim()}/sendTyping/${apiTokenInstance.trim()}`;
+    // MAX-экосистема требует plain numeric ID без суффиксов (как в sendMessage).
     const payload = {
-      chatId: `${cleanPhone}@c.us`,
+      chatId: cleanPhone,
     };
 
     try {
