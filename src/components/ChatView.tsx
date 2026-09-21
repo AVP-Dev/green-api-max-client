@@ -16,7 +16,8 @@ import {
   Plus,
   X,
   BookUser,
-  UserPlus
+  UserPlus,
+  RotateCw
 } from 'lucide-react';
 import { AppSettings, ChatMessage, Contact, Language } from '../types';
 import { translations } from '../i18n/translations';
@@ -46,6 +47,8 @@ interface ChatViewProps {
   isTyping?: boolean;
   onSimulateTyping?: (chatId: string) => void;
   onSendTyping?: (chatId: string) => void;
+  onSyncHistory?: (chatId: string) => void;
+  isSyncingHistory?: boolean;
 }
 
 export const ChatView: React.FC<ChatViewProps> = ({
@@ -66,6 +69,8 @@ export const ChatView: React.FC<ChatViewProps> = ({
   isTyping = false,
   onSimulateTyping,
   onSendTyping,
+  onSyncHistory,
+  isSyncingHistory = false,
 }) => {
   const t = translations[lang];
   const [inputText, setInputText] = useState('');
@@ -268,6 +273,21 @@ export const ChatView: React.FC<ChatViewProps> = ({
 
         {/* Action icons */}
         <div className="flex items-center gap-1">
+          {onSyncHistory && chatId && (
+            <button
+              id="chat-sync-history-button"
+              type="button"
+              onClick={() => onSyncHistory(chatId)}
+              disabled={isSyncingHistory}
+              title={t.syncHistory}
+              className={`p-2 min-w-[36px] min-h-[36px] flex items-center justify-center text-slate-400 hover:text-[#471AFF] hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer disabled:opacity-50 ${
+                isSyncingHistory ? 'text-[#471AFF]' : ''
+              }`}
+            >
+              <RotateCw className={`w-4 h-4 ${isSyncingHistory ? 'animate-spin' : ''}`} />
+            </button>
+          )}
+
           {onOpenAddressBook && (
             <button
               type="button"
@@ -297,6 +317,20 @@ export const ChatView: React.FC<ChatViewProps> = ({
                   onClick={() => setShowOptions(false)} 
                 />
                 <div className="absolute right-0 mt-1 w-56 bg-white border border-slate-200 rounded-xl shadow-lg py-1 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
+                  {onSyncHistory && chatId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSyncHistory(chatId);
+                        setShowOptions(false);
+                      }}
+                      disabled={isSyncingHistory}
+                      className="w-full px-3 py-2 text-left text-slate-700 hover:bg-indigo-50 hover:text-[#471AFF] flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      <RotateCw className={`w-3.5 h-3.5 text-[#471AFF] ${isSyncingHistory ? 'animate-spin' : ''}`} />
+                      <span>{t.syncHistory}</span>
+                    </button>
+                  )}
                   {onOpenAddressBook && (
                     <button
                       type="button"

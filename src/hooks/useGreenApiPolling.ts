@@ -80,56 +80,83 @@ export function useGreenApiPolling({
 
         if (notification && notification.receiptId) {
           const { receiptId, body } = notification;
+          const rawBody = (body || {}) as any;
 
-          const typeWebhook = body?.typeWebhook || '';
-          const isIncomingMsg = typeWebhook === 'incomingMessageReceived';
+          const rawTypeWebhook = rawBody.typeWebhook || '';
+          const typeWebhookLower = rawTypeWebhook.toLowerCase();
+          const bodyTypeLower = String(rawBody.type || '').toLowerCase();
+
+          // Support standard Green-API webhooks, simplified webhooks, and direct journal notifications
+          const isIncomingMsg =
+            typeWebhookLower === 'incomingmessagereceived' ||
+            typeWebhookLower.includes('incoming') ||
+            bodyTypeLower === 'incoming';
+
           const isOutgoingMsg =
-            typeWebhook === 'outgoingMessageReceived' ||
-            typeWebhook === 'outgoingAPIMessageReceived';
+            typeWebhookLower === 'outgoingmessagereceived' ||
+            typeWebhookLower === 'outgoingapimessagereceived' ||
+            typeWebhookLower.includes('outgoing') ||
+            bodyTypeLower === 'outgoing';
+
+          // Extract dialogue chatId & sender
+          const rawChat =
+            rawBody.senderData?.chatId ||
+            rawBody.chatId ||
+            rawBody.senderId ||
+            rawBody.senderData?.sender ||
+            rawBody.sender ||
+            '';
+          const cleanChatId = sanitizePhone(rawChat);
+
+          const rawSender =
+            rawBody.senderData?.sender ||
+            rawBody.senderId ||
+            rawBody.senderData?.chatId ||
+            rawBody.sender ||
+            '';
+          const cleanSender = sanitizePhone(rawSender) || cleanChatId;
+
+          // Extract text from all possible formats (WhatsApp, MAX messenger, journal)
+          let text =
+            rawBody.messageData?.textMessageData?.textMessage ||
+            rawBody.messageData?.extendedTextMessageData?.text ||
+            rawBody.messageData?.textMessage ||
+            rawBody.messageData?.text ||
+            rawBody.textMessage ||
+            rawBody.extendedTextMessage?.text ||
+            rawBody.message ||
+            '';
+
+          // Support attachments (photos, documents, audio, location, contact)
+          if (!text && rawBody.messageData?.fileMessageData) {
+            const file = rawBody.messageData.fileMessageData;
+            text = file.caption || (file.fileName ? `📎 ${file.fileName}` : '📎 [Вложение]');
+          } else if (!text && (rawBody.fileMessage || rawBody.fileMessageData)) {
+            const file = (rawBody.fileMessage || rawBody.fileMessageData) as any;
+            text = file.caption || (file.fileName ? `📎 ${file.fileName}` : '📎 [Вложение]');
+          } else if (!text && rawBody.messageData?.locationMessageData) {
+            const loc = rawBody.messageData.locationMessageData;
+            text = `📍 [Геолокация: ${loc.nameLocation || loc.address || `${loc.latitude}, ${loc.longitude}`}]`;
+          } else if (!text && rawBody.messageData?.contactMessageData) {
+            text = `👤 [Контакт: ${rawBody.messageData.contactMessageData.displayName || ''}]`;
+          } else if (!text && (rawBody.messageData?.typeMessage || rawBody.typeMessage)) {
+            text = `[${rawBody.messageData?.typeMessage || rawBody.typeMessage}]`;
+          }
+
+          const isGenericValidMsg =
+            !isIncomingMsg &&
+            !isOutgoingMsg &&
+            Boolean(rawBody.idMessage && text && cleanChatId);
 
           // 2. Incoming or Outgoing Message Notification Processing
-          if (body && (isIncomingMsg || isOutgoingMsg)) {
-            // Extract text from textMessageData or extendedTextMessageData
-            let text =
-              body.messageData?.textMessageData?.textMessage ||
-              body.messageData?.extendedTextMessageData?.text ||
-              '';
-
-            // Support attachments (photos, documents, audio, location, contact)
-            if (!text && body.messageData?.fileMessageData) {
-              const file = body.messageData.fileMessageData;
-              text = file.caption || (file.fileName ? `📎 ${file.fileName}` : '📎 [Вложение]');
-            } else if (!text && body.messageData?.locationMessageData) {
-              const loc = body.messageData.locationMessageData;
-              text = `📍 [Геолокация: ${loc.nameLocation || loc.address || `${loc.latitude}, ${loc.longitude}`}]`;
-            } else if (!text && body.messageData?.contactMessageData) {
-              text = `👤 [Контакт: ${body.messageData.contactMessageData.displayName || ''}]`;
-            } else if (!text && body.messageData?.typeMessage) {
-              text = `[${body.messageData.typeMessage}]`;
-            }
-
-            // Identify dialogue chatId:
-            // For incoming messages: chatId is who sent it
-            // For outgoing messages: chatId is who it was sent to
-            const rawChat =
-              body.senderData?.chatId ||
-              body.chatId ||
-              body.senderData?.sender ||
-              '';
-            const cleanChatId = sanitizePhone(rawChat);
-
-            const rawSender =
-              body.senderData?.sender ||
-              body.senderData?.chatId ||
-              body.sender ||
-              '';
-            const cleanSender = sanitizePhone(rawSender) || cleanChatId;
-
+          if (rawBody && (isIncomingMsg || isOutgoingMsg || isGenericValidMsg)) {
             if (text && cleanChatId) {
               const messageId =
-                body.idMessage ||
+                rawBody.idMessage ||
                 `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-              const timestamp = body.timestamp ? body.timestamp * 1000 : Date.now();
+              const timestamp = rawBody.timestamp
+                ? (rawBody.timestamp > 1e11 ? rawBody.timestamp : rawBody.timestamp * 1000)
+                : Date.now();
 
               // Receiving a message naturally ends any active typing indicator
               typingRef.current?.({
@@ -138,8 +165,10 @@ export function useGreenApiPolling({
               });
 
               const senderDisplayName =
-                body.senderData?.senderContactName ||
-                body.senderData?.senderName ||
+                rawBody.senderData?.senderContactName ||
+                rawBody.senderData?.senderName ||
+                rawBody.senderContactName ||
+                rawBody.senderName ||
                 undefined;
 
               incomingMsgRef.current({

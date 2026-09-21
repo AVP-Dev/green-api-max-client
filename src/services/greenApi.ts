@@ -1,4 +1,4 @@
-import { GreenApiCredentials, GreenApiNotification } from '../types';
+import { GreenApiCredentials, GreenApiNotification, GreenApiJournalMessage } from '../types';
 import { sanitizePhone } from '../utils/formatters';
 
 export const DEFAULT_API_URL = 'https://3100.api.green-api.com';
@@ -527,6 +527,116 @@ export class GreenApiService {
       return await response.json();
     } catch {
       return { urlAvatar: '', available: false };
+    }
+  }
+
+  /**
+   * Get last incoming messages for up to specified minutes (default 24h = 1440m)
+   * This fetches messages even if webhook queue is empty or messages arrived offline.
+   */
+  static async getLastIncomingMessages(
+    creds: GreenApiCredentials,
+    minutes: number = 1440,
+    signal?: AbortSignal
+  ): Promise<GreenApiJournalMessage[]> {
+    const { idInstance, apiTokenInstance } = creds;
+    const baseUrl = getBaseUrl(creds);
+    const url = `${baseUrl}/waInstance${idInstance.trim()}/lastIncomingMessages/${apiTokenInstance.trim()}?minutes=${minutes}`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        signal,
+      });
+
+      if (!response.ok) {
+        return [];
+      }
+
+      const list = await response.json();
+      return Array.isArray(list) ? list : [];
+    } catch (e) {
+      console.warn('Failed to fetch last incoming messages:', e);
+      return [];
+    }
+  }
+
+  /**
+   * Get last outgoing messages for up to specified minutes (default 24h = 1440m)
+   */
+  static async getLastOutgoingMessages(
+    creds: GreenApiCredentials,
+    minutes: number = 1440,
+    signal?: AbortSignal
+  ): Promise<GreenApiJournalMessage[]> {
+    const { idInstance, apiTokenInstance } = creds;
+    const baseUrl = getBaseUrl(creds);
+    const url = `${baseUrl}/waInstance${idInstance.trim()}/lastOutgoingMessages/${apiTokenInstance.trim()}?minutes=${minutes}`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        signal,
+      });
+
+      if (!response.ok) {
+        return [];
+      }
+
+      const list = await response.json();
+      return Array.isArray(list) ? list : [];
+    } catch (e) {
+      console.warn('Failed to fetch last outgoing messages:', e);
+      return [];
+    }
+  }
+
+  /**
+   * Get chat history for a specific chat
+   */
+  static async getChatHistory(
+    creds: GreenApiCredentials,
+    chatId: string,
+    count: number = 100,
+    signal?: AbortSignal
+  ): Promise<GreenApiJournalMessage[]> {
+    const { idInstance, apiTokenInstance } = creds;
+    const cleanPhone = sanitizePhone(chatId);
+    if (!cleanPhone) return [];
+
+    const baseUrl = getBaseUrl(creds);
+    const url = `${baseUrl}/waInstance${idInstance.trim()}/getChatHistory/${apiTokenInstance.trim()}`;
+
+    try {
+      // First attempt with clean numeric phone (MAX format)
+      let response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatId: cleanPhone, count }),
+        signal,
+      });
+
+      // Fallback with @c.us if standard instance
+      if (!response.ok && response.status === 400) {
+        response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chatId: `${cleanPhone}@c.us`, count }),
+          signal,
+        });
+      }
+
+      if (!response.ok) {
+        return [];
+      }
+
+      const list = await response.json();
+      return Array.isArray(list) ? list : [];
+    } catch (e) {
+      console.warn('Failed to fetch chat history:', e);
+      return [];
     }
   }
 }

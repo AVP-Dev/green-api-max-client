@@ -137,6 +137,13 @@ export default function App() {
     ];
   });
 
+  // Fast ID tracking for instant deduplication
+  const knownMessageIdsRef = useRef<Set<string>>(new Set(messages.map((m) => m.id)));
+
+  useEffect(() => {
+    messages.forEach((m) => knownMessageIdsRef.current.add(m.id));
+  }, [messages]);
+
   // 5. Active chat ID
   const [activeChatId, setActiveChatId] = useState<string | null>(() => {
     const saved = safeStorage.getItem(STORAGE_KEYS.ACTIVE_CHAT);
@@ -433,7 +440,7 @@ export default function App() {
     }
   }, [creds, lang]);
 
-  // 7. Incoming message processor from long-polling hook
+  // 7. Incoming message processor from long-polling hook & background reconciliation
   const handleIncomingMessage = useCallback(
     (newMsg: {
       id: string;
@@ -443,9 +450,16 @@ export default function App() {
       timestamp: number;
       senderName?: string;
       direction?: 'incoming' | 'outgoing';
+      silent?: boolean;
     }) => {
       const cleanChatId = sanitizePhone(newMsg.chatId);
-      if (!cleanChatId) return;
+      if (!cleanChatId) return false;
+
+      // Check if message ID was already processed
+      if (knownMessageIdsRef.current.has(newMsg.id)) {
+        return false;
+      }
+      knownMessageIdsRef.current.add(newMsg.id);
 
       const direction = newMsg.direction || 'incoming';
       const isIncoming = direction === 'incoming';
@@ -461,7 +475,6 @@ export default function App() {
       };
 
       setMessages((prev) => {
-        // Prevent duplicate IDs
         if (prev.some((m) => m.id === incomingMsg.id)) {
           return prev;
         }
@@ -515,7 +528,7 @@ export default function App() {
             lastMessageText: newMsg.text,
             lastMessageTimestamp: newMsg.timestamp,
             lastMessageDirection: direction,
-            unreadCount: (isCurrentActive || !isIncoming) ? (existing.unreadCount || 0) : existing.unreadCount + 1,
+            unreadCount: (isCurrentActive || !isIncoming) ? (existing.unreadCount || 0) : (existing.unreadCount || 0) + 1,
           };
           updatedList = updated;
         } else {
@@ -546,8 +559,8 @@ export default function App() {
         return next;
       });
 
-      // Sound alert if enabled and incoming
-      if (isIncoming && settings.soundEnabled) {
+      // Sound alert if enabled and incoming and not silent
+      if (isIncoming && settings.soundEnabled && !newMsg.silent) {
         playNotificationSound();
       }
 
@@ -569,16 +582,289 @@ export default function App() {
         );
       }
 
-      showToast(
-        isIncoming
-          ? (lang === 'ru'
-              ? `Входящее сообщение от ${newMsg.senderName || '+' + cleanChatId}`
-              : `Incoming message from ${newMsg.senderName || '+' + cleanChatId}`)
-          : (lang === 'ru' ? 'Исходящее сообщение синхронизировано' : 'Outgoing message synchronized')
-      );
+      if (!newMsg.silent) {
+        showToast(
+          isIncoming
+            ? (lang === 'ru'
+                ? `Входящее сообщение от ${newMsg.senderName || '+' + cleanChatId}`
+                : `Incoming message from ${newMsg.senderName || '+' + cleanChatId}`)
+            : (lang === 'ru' ? 'Исходящее сообщение синхронизировано' : 'Outgoing message synchronized')
+        );
+      }
+
+      return true;
     },
     [activeChatId, lang, settings.soundEnabled]
   );
+
+  // Journal & history synchronization engines
+  const [isSyncingMessages, setIsSyncingMessages] = useState(false);
+  const [isSyncingChatHistory, setIsSyncingChatHistory] = useState(false);
+
+  const syncRecentMessages = useCallback(
+    async (showNotice = false) => {
+      if (!creds?.idInstance || !creds?.apiTokenInstance) return 0;
+      setIsSyncingMessages(true);
+      try {
+        const [incomingList, outgoingList] = await Promise.all([
+          GreenApiService.getLastIncomingMessages(creds, 1440).catch((e) => {
+            console.warn('[Sync] Failed to fetch last incoming messages:', e);
+            return [];
+          }),
+          GreenApiService.getLastOutgoingMessages(creds, 1440).catch((e) => {
+            console.warn('[Sync] Failed to fetch last outgoing messages:', e);
+            return [];
+          }),
+        ]);
+
+        const allItems = [...incomingList, ...outgoingList];
+        if (allItems.length === 0) {
+          if (showNotice) {
+            showToast(
+              lang === 'ru'
+                ? 'Новых сообщений на сервере за 24 ч не найдено'
+                : 'No new messages found on server for 24h'
+            );
+          }
+          return 0;
+        }
+
+        // Sort chronologically ascending
+        allItems.sort((a, b) => {
+          const tA = (a.timestamp || 0) > 1e11 ? (a.timestamp || 0) : (a.timestamp || 0) * 1000;
+          const tB = (b.timestamp || 0) > 1e11 ? (b.timestamp || 0) : (b.timestamp || 0) * 1000;
+          return tA - tB;
+        });
+
+        let newMessagesAdded = 0;
+
+        allItems.forEach((item) => {
+          const rawChat = item.chatId || item.senderId || '';
+          const cleanChat = sanitizePhone(rawChat);
+          if (!cleanChat) return;
+
+          const text =
+            item.textMessage ||
+            item.extendedTextMessage?.text ||
+            item.fileMessage?.caption ||
+            (item.fileMessage?.fileName ? `📎 ${item.fileMessage.fileName}` : '') ||
+            '';
+          if (!text) return;
+
+          const isOutgoing = item.type === 'outgoing' || item.sendByApi;
+          const msgId = item.idMessage || `hist_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+          const timestamp = item.timestamp
+            ? (item.timestamp > 1e11 ? item.timestamp : item.timestamp * 1000)
+            : Date.now();
+
+          const senderName = item.senderContactName || item.senderName || undefined;
+
+          handleIncomingMessage({
+            id: msgId,
+            chatId: cleanChat,
+            senderPhone: isOutgoing ? creds.idInstance : cleanChat,
+            text,
+            timestamp,
+            senderName,
+            direction: isOutgoing ? 'outgoing' : 'incoming',
+            silent: !showNotice, // silent when doing background/initial sync
+          });
+          newMessagesAdded++;
+        });
+
+        if (showNotice) {
+          showToast(
+            lang === 'ru'
+              ? `Синхронизировано сообщений: ${allItems.length}`
+              : `Successfully synced ${allItems.length} messages`
+          );
+        }
+        return newMessagesAdded;
+      } catch (err: any) {
+        console.warn('Error syncing recent messages:', err);
+        if (showNotice) {
+          showToast(
+            lang === 'ru'
+              ? `Ошибка синхронизации: ${err.message || 'Сбой'}`
+              : `Sync error: ${err.message || 'Error'}`
+          );
+        }
+        return 0;
+      } finally {
+        setIsSyncingMessages(false);
+      }
+    },
+    [creds, handleIncomingMessage, lang]
+  );
+
+  const syncChatHistory = useCallback(
+    async (chatId: string) => {
+      if (!creds || !chatId) return;
+      const cleanPhone = sanitizePhone(chatId);
+      if (!cleanPhone) return;
+
+      setIsSyncingChatHistory(true);
+      try {
+        const history = await GreenApiService.getChatHistory(creds, cleanPhone, 100);
+        if (Array.isArray(history) && history.length > 0) {
+          // Sort ascending
+          history.sort((a, b) => {
+            const tA = (a.timestamp || 0) > 1e11 ? (a.timestamp || 0) : (a.timestamp || 0) * 1000;
+            const tB = (b.timestamp || 0) > 1e11 ? (b.timestamp || 0) : (b.timestamp || 0) * 1000;
+            return tA - tB;
+          });
+
+          history.forEach((item) => {
+            const text =
+              item.textMessage ||
+              item.extendedTextMessage?.text ||
+              item.fileMessage?.caption ||
+              (item.fileMessage?.fileName ? `📎 ${item.fileMessage.fileName}` : '') ||
+              '';
+            if (!text) return;
+
+            const isOutgoing = item.type === 'outgoing' || item.sendByApi;
+            const msgId = item.idMessage || `hist_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+            const timestamp = item.timestamp
+              ? (item.timestamp > 1e11 ? item.timestamp : item.timestamp * 1000)
+              : Date.now();
+
+            handleIncomingMessage({
+              id: msgId,
+              chatId: cleanPhone,
+              senderPhone: isOutgoing ? creds.idInstance : cleanPhone,
+              text,
+              timestamp,
+              senderName: item.senderContactName || item.senderName,
+              direction: isOutgoing ? 'outgoing' : 'incoming',
+              silent: true,
+            });
+          });
+        }
+      } catch (err) {
+        console.warn('Failed to load chat history for', cleanPhone, err);
+      } finally {
+        setIsSyncingChatHistory(false);
+      }
+    },
+    [creds, handleIncomingMessage]
+  );
+
+  // Automatic journal sync on credentials connection/startup
+  const initialSyncDoneRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (creds?.idInstance && creds?.apiTokenInstance) {
+      const credsKey = `${creds.idInstance}_${creds.apiTokenInstance}`;
+      if (initialSyncDoneRef.current !== credsKey) {
+        initialSyncDoneRef.current = credsKey;
+        const timer = setTimeout(() => {
+          syncRecentMessages(false);
+        }, 1200);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [creds?.idInstance, creds?.apiTokenInstance, syncRecentMessages]);
+
+  // 7b. Continuous Real-time Background Message Auto-Reconciliation Loop (every 3.5 seconds)
+  // Ensures incoming and outgoing messages are automatically discovered and displayed
+  // in real-time, matching modern messengers (Telegram/WhatsApp), even if webhooks are delayed
+  useEffect(() => {
+    if (!creds?.idInstance || !creds?.apiTokenInstance) return;
+
+    let isSubscribed = true;
+    let isChecking = false;
+
+    const performBackgroundCheck = async () => {
+      if (!isSubscribed || isChecking) return;
+      isChecking = true;
+
+      try {
+        const incomingPromise = GreenApiService.getLastIncomingMessages(creds, 60).catch(() => []);
+        const outgoingPromise = GreenApiService.getLastOutgoingMessages(creds, 60).catch(() => []);
+        const historyPromise = activeChatId
+          ? GreenApiService.getChatHistory(creds, activeChatId, 15).catch(() => [])
+          : Promise.resolve([]);
+
+        const [incomingList, outgoingList, chatHistoryList] = await Promise.all([
+          incomingPromise,
+          outgoingPromise,
+          historyPromise,
+        ]);
+
+        if (!isSubscribed) return;
+
+        const combinedList = [...incomingList, ...outgoingList, ...chatHistoryList];
+
+        // Sort chronologically ascending
+        combinedList.sort((a, b) => {
+          const tA = (a.timestamp || 0) > 1e11 ? (a.timestamp || 0) : (a.timestamp || 0) * 1000;
+          const tB = (b.timestamp || 0) > 1e11 ? (b.timestamp || 0) : (b.timestamp || 0) * 1000;
+          return tA - tB;
+        });
+
+        for (const item of combinedList) {
+          if (!item?.idMessage) continue;
+          if (knownMessageIdsRef.current.has(item.idMessage)) continue;
+
+          const rawChat = item.chatId || item.senderId || '';
+          const cleanChat = sanitizePhone(rawChat);
+          if (!cleanChat) continue;
+
+          const text =
+            item.textMessage ||
+            item.extendedTextMessage?.text ||
+            item.fileMessage?.caption ||
+            (item.fileMessage?.fileName ? `📎 ${item.fileMessage.fileName}` : '') ||
+            '';
+          if (!text) continue;
+
+          const isOutgoing = item.type === 'outgoing' || item.sendByApi;
+          const timestamp = item.timestamp
+            ? (item.timestamp > 1e11 ? item.timestamp : item.timestamp * 1000)
+            : Date.now();
+
+          // Newly discovered message! Add it and alert user with sound & toast
+          handleIncomingMessage({
+            id: item.idMessage,
+            chatId: cleanChat,
+            senderPhone: isOutgoing ? creds.idInstance : cleanChat,
+            text,
+            timestamp,
+            senderName: item.senderContactName || item.senderName,
+            direction: isOutgoing ? 'outgoing' : 'incoming',
+            silent: false,
+          });
+        }
+      } catch (err) {
+        // Silent failure in background - next tick will retry
+      } finally {
+        isChecking = false;
+      }
+    };
+
+    // Immediate check on mount or when switching chats
+    performBackgroundCheck();
+
+    // Check window focus for instant sync on returning to browser tab
+    const handleFocus = () => {
+      performBackgroundCheck();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    // Continuous interval: 3.5s when active tab, 6s when backgrounded
+    const intervalId = setInterval(
+      () => {
+        performBackgroundCheck();
+      },
+      typeof document !== 'undefined' && document.visibilityState === 'visible' ? 3500 : 6000
+    );
+
+    return () => {
+      isSubscribed = false;
+      clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [creds?.idInstance, creds?.apiTokenInstance, creds?.apiUrl, activeChatId, handleIncomingMessage]);
 
   // 8. Long-polling engine initialization
   const { status: pollingStatus, lastReceiptId, errorMessage: pollingErrorMessage, retry: retryPolling } = useGreenApiPolling({
@@ -706,6 +992,7 @@ export default function App() {
     setDialogs((prev) =>
       prev.map((d) => (d.chatId === chatId ? { ...d, unreadCount: 0 } : d))
     );
+    syncChatHistory(chatId);
   };
 
   const handleStartNewChat = useCallback((cleanPhone: string, displayName?: string) => {
@@ -713,6 +1000,7 @@ export default function App() {
     if (!sanitized) return;
 
     setActiveChatId(sanitized);
+    syncChatHistory(sanitized);
     const existingContact = contactsMap.get(sanitized);
     const resolvedName = displayName || existingContact?.contactName || existingContact?.name;
 
@@ -974,6 +1262,8 @@ export default function App() {
             contactsMap={contactsMap}
             contactsCount={contacts.length}
             onOpenAddressBook={() => setIsAddressBookOpen(true)}
+            onSyncMessages={() => syncRecentMessages(true)}
+            isSyncingMessages={isSyncingMessages}
           />
         </div>
 
@@ -1008,6 +1298,8 @@ export default function App() {
             isTyping={!!(activeChatId && typingChats[activeChatId])}
             onSimulateTyping={(cid) => handleTypingEvent({ chatId: cid, isTyping: true })}
             onSendTyping={handleSendTyping}
+            onSyncHistory={(cid) => syncChatHistory(cid)}
+            isSyncingHistory={isSyncingChatHistory}
           />
         </div>
       </div>
@@ -1051,6 +1343,8 @@ export default function App() {
         onClearAllChats={handleClearAllChats}
         onSignOut={handleSignOut}
         activeChatId={activeChatId}
+        onSyncMessages={() => syncRecentMessages(true)}
+        isSyncingMessages={isSyncingMessages}
       />
     </div>
   );

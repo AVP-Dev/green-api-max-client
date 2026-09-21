@@ -43,6 +43,8 @@ interface SettingsModalProps {
   onClearAllChats: () => void;
   onSignOut: () => void;
   activeChatId?: string | null;
+  onSyncMessages?: () => Promise<number>;
+  isSyncingMessages?: boolean;
 }
 
 type TabType = 'chat' | 'notifications' | 'connection' | 'integration' | 'data';
@@ -61,6 +63,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onClearAllChats,
   onSignOut,
   activeChatId,
+  onSyncMessages,
+  isSyncingMessages = false,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('chat');
   const [checkingStatus, setCheckingStatus] = useState(false);
@@ -270,6 +274,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         outgoingMessageWebhook: 'yes',
         outgoingAPIMessageWebhook: 'yes',
         stateWebhook: 'yes',
+        webhookUrl: '',
         incomingWebhookUrl: '',
       });
       setFixSettingsMessage(
@@ -886,13 +891,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         {diagnosticData.testPollMessage}
                       </div>
 
-                      {/* Action buttons: auto-fix and queue clear */}
+                      {/* Action buttons: auto-fix, sync, and queue clear */}
                       <div className="flex flex-wrap items-center gap-2 pt-1">
+                        {onSyncMessages && (
+                          <button
+                            type="button"
+                            onClick={() => onSyncMessages()}
+                            disabled={isSyncingMessages}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-indigo-50 border border-[#471AFF]/30 text-[#471AFF] hover:bg-indigo-100 text-[11px] font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                          >
+                            <RotateCw className={`w-3 h-3 ${isSyncingMessages ? 'animate-spin' : ''}`} />
+                            <span>{isSyncingMessages ? (isRu ? 'Синхронизация...' : 'Syncing...') : (isRu ? 'Синхронизировать сообщения (24ч)' : 'Sync Messages (24h)')}</span>
+                          </button>
+                        )}
+
                         <button
                           type="button"
                           onClick={handleFixInstanceSettings}
                           disabled={isFixingSettings}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-indigo-50 border border-[#471AFF]/30 text-[#471AFF] hover:bg-indigo-100 text-[11px] font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 hover:bg-slate-200 text-[11px] font-semibold transition-colors cursor-pointer disabled:opacity-50"
                         >
                           <Wrench className={`w-3 h-3 ${isFixingSettings ? 'animate-spin' : ''}`} />
                           <span>{isFixingSettings ? (isRu ? 'Настройка...' : 'Configuring...') : (isRu ? 'Оптимизировать для MAX Web' : 'Optimize for MAX Web')}</span>

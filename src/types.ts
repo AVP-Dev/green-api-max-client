@@ -117,6 +117,31 @@ export interface GreenApiRawContact {
   type?: 'user' | 'group';
 }
 
+export interface GreenApiJournalMessage {
+  type?: 'incoming' | 'outgoing' | string;
+  idMessage?: string;
+  timestamp?: number;
+  typeMessage?: string;
+  chatId?: string;
+  chatType?: string;
+  textMessage?: string;
+  extendedTextMessage?: {
+    text?: string;
+    description?: string;
+    title?: string;
+  };
+  fileMessage?: {
+    downloadUrl?: string;
+    caption?: string;
+    fileName?: string;
+  };
+  senderId?: string;
+  senderName?: string;
+  senderContactName?: string;
+  statusMessage?: string;
+  sendByApi?: boolean;
+}
+
 export interface AppSettings {
   pollingIntervalMs: number; // 1000, 2000, 5000
   soundEnabled: boolean;

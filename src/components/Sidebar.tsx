@@ -46,6 +46,8 @@ interface SidebarProps {
   showPhoneFormatting?: boolean;
   onTogglePinChat?: (chatId: string) => void;
   typingChats?: Record<string, boolean>;
+  onSyncMessages?: () => void;
+  isSyncingMessages?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -68,6 +70,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   showPhoneFormatting = true,
   onTogglePinChat,
   typingChats = {},
+  onSyncMessages,
+  isSyncingMessages = false,
 }) => {
   const t = translations[lang];
   const [searchQuery, setSearchQuery] = useState('');
@@ -171,8 +175,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        {/* Header Action icons: Address Book, Integration, Settings */}
+        {/* Header Action icons: Address Book, Sync, Settings */}
         <div className="flex items-center gap-1 shrink-0">
+          {onSyncMessages && (
+            <button
+              id="sidebar-sync-messages-button"
+              type="button"
+              onClick={onSyncMessages}
+              disabled={isSyncingMessages}
+              className={`p-2 text-slate-500 hover:text-[#471AFF] hover:bg-indigo-50 rounded-xl transition-colors cursor-pointer disabled:opacity-50 ${
+                isSyncingMessages ? 'text-[#471AFF]' : ''
+              }`}
+              title={t.syncHistory24h}
+            >
+              <RotateCw className={`w-4 h-4 ${isSyncingMessages ? 'animate-spin' : ''}`} />
+            </button>
+          )}
+
           {onOpenAddressBook && (
             <button
               id="sidebar-address-book-button"
