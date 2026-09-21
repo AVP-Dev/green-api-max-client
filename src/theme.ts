@@ -107,6 +107,18 @@ export const THEME_RULES: ThemeRule[] = [
   { pattern: L('border-amber-200'), darkMarker: 'dark:border-' },
   { pattern: L('divide-slate-100'), darkMarker: 'dark:divide-' },
   { pattern: L('focus:bg-white'), darkMarker: 'dark:focus:bg-' },
+  // Градиентные стопы (кейс: карточка «Выйти» from-rose-50/to-pink-50)
+  { pattern: L('from-white'), darkMarker: 'dark:from-' },
+  { pattern: L('from-slate-50'), darkMarker: 'dark:from-' },
+  { pattern: L('from-indigo-50'), darkMarker: 'dark:from-' },
+  { pattern: L('from-rose-50'), darkMarker: 'dark:from-' },
+  { pattern: L('via-white'), darkMarker: 'dark:via-' },
+  { pattern: L('via-slate-50'), darkMarker: 'dark:via-' },
+  { pattern: L('to-white'), darkMarker: 'dark:to-' },
+  { pattern: L('to-slate-50'), darkMarker: 'dark:to-' },
+  { pattern: L('to-pink-50'), darkMarker: 'dark:to-' },
+  { pattern: L('to-purple-50'), darkMarker: 'dark:to-' },
+  { pattern: L('to-indigo-50'), darkMarker: 'dark:to-' },
 ];
 
 /**

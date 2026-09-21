@@ -1677,7 +1677,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 {/* Sign Out Card (Dedicated, clear, prominent) */}
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <div className="p-4 rounded-2xl bg-gradient-to-r from-rose-50/80 to-pink-50/50 border border-rose-200/70 dark:border-rose-800">
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-rose-50/80 dark:from-rose-950/40 to-pink-50/50 dark:to-pink-950/30 border border-rose-200/70 dark:border-rose-800">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <h4 className="text-xs font-bold text-rose-900 dark:text-rose-200 flex items-center gap-1.5">
