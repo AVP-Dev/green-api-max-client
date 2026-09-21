@@ -16,7 +16,11 @@ import {
   Eye,
   EyeOff,
   Save,
-  Server
+  Server,
+  AlertTriangle,
+  Activity,
+  Wrench,
+  Layers
 } from 'lucide-react';
 import { AppSettings, GreenApiCredentials, Language, ChatDialog, ChatMessage } from '../types';
 import { translations } from '../i18n/translations';
@@ -70,6 +74,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [isSavedRecently, setIsSavedRecently] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  // Deep Diagnostic State
+  const [diagnosticData, setDiagnosticData] = useState<{
+    stateInstance?: string;
+    incomingWebhook?: string;
+    outgoingMessageWebhook?: string;
+    outgoingAPIMessageWebhook?: string;
+    webhookUrl?: string;
+    countWebhooks?: number;
+    testPollSuccess?: boolean;
+    testPollMessage?: string;
+  } | null>(null);
+  const [isFixingSettings, setIsFixingSettings] = useState(false);
+  const [fixSettingsMessage, setFixSettingsMessage] = useState<string | null>(null);
+  const [isClearingQueue, setIsClearingQueue] = useState(false);
+
   // Synchronize inputs when modal opens or creds change
   useEffect(() => {
     if (isOpen && creds) {
@@ -80,6 +99,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       setIsSavedRecently(false);
       setStatusResult(null);
       setStatusState(null);
+      setDiagnosticData(null);
+      setFixSettingsMessage(null);
     }
   }, [isOpen, creds]);
 
@@ -138,13 +159,77 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setCheckingStatus(true);
     setStatusResult(null);
     setStatusState(null);
+    setDiagnosticData(null);
+    setFixSettingsMessage(null);
+
+    const testCreds = {
+      idInstance: testId,
+      apiTokenInstance: testToken,
+      apiUrl: testUrl,
+    };
 
     try {
-      const state = await GreenApiService.checkInstanceStatus({
-        idInstance: testId,
-        apiTokenInstance: testToken,
-        apiUrl: testUrl,
+      // 1. Check instance status
+      const state = await GreenApiService.checkInstanceStatus(testCreds);
+      
+      let incomingWebhook: string | undefined;
+      let outgoingMessageWebhook: string | undefined;
+      let outgoingAPIMessageWebhook: string | undefined;
+      let webhookUrl: string | undefined;
+      let countWebhooks: number | undefined;
+      let testPollSuccess = false;
+      let testPollMessage = '';
+
+      // 2. Try to get instance settings
+      try {
+        const settingsRes = await GreenApiService.getSettings(testCreds);
+        if (settingsRes) {
+          incomingWebhook = settingsRes.incomingWebhook;
+          outgoingMessageWebhook = settingsRes.outgoingMessageWebhook;
+          outgoingAPIMessageWebhook = settingsRes.outgoingAPIMessageWebhook;
+          webhookUrl = settingsRes.webhookUrl || settingsRes.incomingWebhookUrl;
+        }
+      } catch (err: any) {
+        console.warn('Failed to fetch settings during diagnostics:', err);
+      }
+
+      // 3. Try to get webhooks count
+      try {
+        const countRes = await GreenApiService.getWebhooksCount(testCreds);
+        if (countRes && typeof countRes.countWebhooks === 'number') {
+          countWebhooks = countRes.countWebhooks;
+        }
+      } catch (err: any) {
+        console.warn('Failed to fetch webhooks count during diagnostics:', err);
+      }
+
+      // 4. Test receiveNotification
+      try {
+        const notification = await GreenApiService.receiveNotification(testCreds, undefined, 1);
+        testPollSuccess = true;
+        testPollMessage = notification 
+          ? (isRu 
+              ? `Получено уведомление #${notification.receiptId} (тип: ${notification.body?.typeWebhook || 'webhook'})` 
+              : `Received notification #${notification.receiptId}`)
+          : (isRu 
+              ? 'Опрос успешен: очередь активна (ожидающих новых сообщений нет)' 
+              : 'Poll check succeeded: queue is active (no waiting messages)');
+      } catch (err: any) {
+        testPollSuccess = false;
+        testPollMessage = err?.message || 'Polling request failed';
+      }
+
+      setDiagnosticData({
+        stateInstance: state.stateInstance,
+        incomingWebhook,
+        outgoingMessageWebhook,
+        outgoingAPIMessageWebhook,
+        webhookUrl,
+        countWebhooks,
+        testPollSuccess,
+        testPollMessage,
       });
+
       if (state.stateInstance === 'authorized') {
         setStatusResult(t.statusResultAuthorized);
         setStatusState('success');
@@ -163,6 +248,54 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       setStatusState('error');
     } finally {
       setCheckingStatus(false);
+    }
+  };
+
+  const handleFixInstanceSettings = async () => {
+    const testId = editIdInstance.trim();
+    const testToken = editApiToken.trim();
+    const testUrl = editApiUrl.trim() || DEFAULT_API_URL;
+    if (!testId || !testToken) return;
+
+    setIsFixingSettings(true);
+    setFixSettingsMessage(null);
+    try {
+      const testCreds = { idInstance: testId, apiTokenInstance: testToken, apiUrl: testUrl };
+      await GreenApiService.setSettings(testCreds, {
+        incomingWebhook: 'yes',
+        outgoingMessageWebhook: 'yes',
+        outgoingAPIMessageWebhook: 'yes',
+        stateWebhook: 'yes',
+        incomingWebhookUrl: '',
+      });
+      setFixSettingsMessage(
+        isRu 
+          ? 'Настройки инстанса успешно оптимизированы! Вебхуки включены в HTTP-очередь.' 
+          : 'Instance settings optimized! Webhooks enabled in HTTP queue.'
+      );
+      await handleDiagnosticCheck();
+    } catch (err: any) {
+      setFixSettingsMessage(err?.message || (isRu ? 'Ошибка обновления настроек' : 'Error updating settings'));
+    } finally {
+      setIsFixingSettings(false);
+    }
+  };
+
+  const handleClearQueue = async () => {
+    const testId = editIdInstance.trim();
+    const testToken = editApiToken.trim();
+    const testUrl = editApiUrl.trim() || DEFAULT_API_URL;
+    if (!testId || !testToken) return;
+
+    setIsClearingQueue(true);
+    try {
+      const testCreds = { idInstance: testId, apiTokenInstance: testToken, apiUrl: testUrl };
+      await GreenApiService.clearWebhooksQueue(testCreds);
+      await handleDiagnosticCheck();
+    } catch (err: any) {
+      console.error('Failed to clear queue:', err);
+    } finally {
+      setIsClearingQueue(false);
     }
   };
 
@@ -576,6 +709,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       >
                         api.green-api.com
                       </button>
+                      {editIdInstance.trim().length >= 4 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditApiUrl(`https://${editIdInstance.trim().slice(0, 4)}.api.green-api.com`);
+                            setSaveError(null);
+                          }}
+                          className={`text-[10px] px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
+                            editApiUrl === `https://${editIdInstance.trim().slice(0, 4)}.api.green-api.com`
+                              ? 'bg-indigo-50 border-[#471AFF]/30 text-[#471AFF] font-medium'
+                              : 'bg-slate-100/80 border-slate-200/80 text-slate-600 hover:bg-slate-200/60'
+                          }`}
+                        >
+                          {editIdInstance.trim().slice(0, 4)}.api.green-api.com
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => {
@@ -650,6 +799,102 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         statusState === 'success' ? 'bg-emerald-500' : statusState === 'error' ? 'bg-rose-500' : 'bg-amber-500'
                       }`} />
                       <span className="break-words [overflow-wrap:anywhere]">{statusResult}</span>
+                    </div>
+                  )}
+
+                  {/* Deep Diagnostics & Troubleshooting Panel */}
+                  {diagnosticData && (
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5 text-xs text-slate-700 animate-in fade-in duration-200">
+                      <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/80">
+                        <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                          <Activity className="w-3.5 h-3.5 text-[#471AFF]" />
+                          <span>{isRu ? 'Диагностика инстанса и очереди' : 'Instance & Queue Diagnostics'}</span>
+                        </div>
+                        <span className="text-[10px] font-mono text-slate-500">
+                          {diagnosticData.stateInstance || 'unknown'}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-[11px]">
+                        <div className="bg-white p-2 rounded-lg border border-slate-100">
+                          <span className="text-slate-400 block text-[10px]">{isRu ? 'Очередь уведомлений:' : 'Notification Queue:'}</span>
+                          <span className="font-semibold text-slate-800">
+                            {diagnosticData.countWebhooks !== undefined ? `${diagnosticData.countWebhooks} сообщ.` : (isRu ? 'недоступно' : 'n/a')}
+                          </span>
+                        </div>
+                        <div className="bg-white p-2 rounded-lg border border-slate-100">
+                          <span className="text-slate-400 block text-[10px]">{isRu ? 'Тест опроса (Receive):' : 'Polling Test (Receive):'}</span>
+                          <span className={`font-semibold ${diagnosticData.testPollSuccess ? 'text-emerald-600' : 'text-rose-600'}`}>
+                            {diagnosticData.testPollSuccess ? (isRu ? 'Работает' : 'Success') : (isRu ? 'Сбой' : 'Failed')}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Webhook Configuration Inspection */}
+                      <div className="bg-white p-2 rounded-lg border border-slate-100 text-[11px] space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">{isRu ? 'Входящие вебхуки (incomingWebhook):' : 'Incoming Webhook:'}</span>
+                          <span className={`font-mono font-medium ${diagnosticData.incomingWebhook === 'yes' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                            {diagnosticData.incomingWebhook || 'no'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">{isRu ? 'Исходящие вебхуки (outgoingWebhook):' : 'Outgoing Webhook:'}</span>
+                          <span className={`font-mono font-medium ${diagnosticData.outgoingMessageWebhook === 'yes' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                            {diagnosticData.outgoingMessageWebhook || 'no'}
+                          </span>
+                        </div>
+                        {diagnosticData.webhookUrl && (
+                          <div className="mt-1.5 p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[10px] flex items-start gap-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                            <div>
+                              <span className="font-semibold">{isRu ? 'Внимание: указан внешний Webhook URL: ' : 'Warning: External Webhook URL set: '}</span>
+                              <span className="font-mono break-words [overflow-wrap:anywhere]">{diagnosticData.webhookUrl}</span>
+                              <p className="mt-0.5 text-amber-700">
+                                {isRu 
+                                  ? 'GREEN-API отправляет вебхуки на внешний сервер, поэтому они не попадают в веб-очередь. Нажмите «Оптимизировать для MAX Web», чтобы перенаправить их в веб-интерфейс.'
+                                  : 'GREEN-API is redirecting webhooks to an external server. Click Optimize for MAX Web to route them to the web queue.'}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Polling diagnostic detail */}
+                      <div className="text-[10px] text-slate-500 bg-slate-100/80 p-1.5 rounded-lg font-mono break-words [overflow-wrap:anywhere]">
+                        {diagnosticData.testPollMessage}
+                      </div>
+
+                      {/* Action buttons: auto-fix and queue clear */}
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={handleFixInstanceSettings}
+                          disabled={isFixingSettings}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-indigo-50 border border-[#471AFF]/30 text-[#471AFF] hover:bg-indigo-100 text-[11px] font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          <Wrench className={`w-3 h-3 ${isFixingSettings ? 'animate-spin' : ''}`} />
+                          <span>{isFixingSettings ? (isRu ? 'Настройка...' : 'Configuring...') : (isRu ? 'Оптимизировать для MAX Web' : 'Optimize for MAX Web')}</span>
+                        </button>
+
+                        {(diagnosticData.countWebhooks || 0) > 0 && (
+                          <button
+                            type="button"
+                            onClick={handleClearQueue}
+                            disabled={isClearingQueue}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium transition-colors cursor-pointer disabled:opacity-50"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span>{isClearingQueue ? (isRu ? 'Очистка...' : 'Clearing...') : (isRu ? 'Очистить очередь' : 'Clear Queue')}</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {fixSettingsMessage && (
+                        <div className="p-2 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px]">
+                          {fixSettingsMessage}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

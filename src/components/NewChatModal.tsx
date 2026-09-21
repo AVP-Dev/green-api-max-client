@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { X, UserPlus, Phone, ArrowRight, ShieldAlert } from 'lucide-react';
-import { Language } from '../types';
+import { X, UserPlus, Phone, ArrowRight, ShieldAlert, BookUser } from 'lucide-react';
+import { Contact, Language } from '../types';
 import { translations } from '../i18n/translations';
 import { sanitizePhone, formatDisplayPhone } from '../utils/formatters';
 import { Avatar } from './Avatar';
@@ -8,7 +8,9 @@ import { Avatar } from './Avatar';
 interface NewChatModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onStartChat: (cleanPhone: string) => void;
+  onStartChat: (cleanPhone: string, displayName?: string) => void;
+  contacts?: Contact[];
+  onOpenAddressBook?: () => void;
   lang: Language;
 }
 
@@ -16,6 +18,8 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
   isOpen,
   onClose,
   onStartChat,
+  contacts = [],
+  onOpenAddressBook,
   lang,
 }) => {
   const t = translations[lang];
@@ -33,14 +37,16 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
       return;
     }
     setError(null);
-    onStartChat(sanitized);
+    const matched = contacts.find((c) => c.id === sanitized);
+    const resolvedName = matched?.contactName || matched?.name;
+    onStartChat(sanitized, resolvedName);
     setPhoneInput('');
     onClose();
   };
 
-  const handleQuickPreset = (presetPhone: string) => {
-    setPhoneInput(presetPhone);
-    setError(null);
+  const handleQuickPreset = (presetPhone: string, displayName?: string) => {
+    onStartChat(presetPhone, displayName);
+    onClose();
   };
 
   return (
@@ -110,6 +116,46 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
             <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 shrink-0" />
               <span>{error}</span>
+            </div>
+          )}
+
+          {/* Selection from Address Book if contacts exist */}
+          {contacts.length > 0 && (
+            <div className="pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-between text-[11px] mb-2">
+                <span className="font-semibold text-slate-700 flex items-center gap-1.5">
+                  <BookUser className="w-3.5 h-3.5 text-[#471AFF]" />
+                  <span>{t.chooseFromContacts || (lang === 'ru' ? 'Или выберите из записной книжки:' : 'Or select from address book:')}</span>
+                </span>
+                {onOpenAddressBook && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onOpenAddressBook();
+                    }}
+                    className="text-[#471AFF] hover:underline font-semibold cursor-pointer"
+                  >
+                    {lang === 'ru' ? `Все (${contacts.length}) →` : `All (${contacts.length}) →`}
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-0.5">
+                {contacts.slice(0, 6).map((c) => {
+                  const name = c.contactName || c.name || formatDisplayPhone(c.id);
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => handleQuickPreset(c.id, name)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs bg-indigo-50/70 hover:bg-indigo-100/90 text-slate-800 rounded-xl transition-all cursor-pointer border border-indigo-100 shadow-2xs group active:scale-95"
+                    >
+                      <Avatar id={c.id} name={name} avatarUrl={c.avatarUrl} size="xs" />
+                      <span className="font-medium truncate max-w-[120px]">{name}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 

@@ -1,16 +1,19 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   GreenApiCredentials,
   ChatMessage,
   ChatDialog,
   Language,
   AppSettings,
+  Contact,
 } from './types';
 import { AuthScreen } from './components/AuthScreen';
 import { Sidebar } from './components/Sidebar';
 import { ChatView } from './components/ChatView';
 import { NewChatModal } from './components/NewChatModal';
 import { SettingsModal } from './components/SettingsModal';
+import { AddressBookModal } from './components/AddressBookModal';
+import { IntegrationModal } from './components/IntegrationModal';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { useGreenApiPolling } from './hooks/useGreenApiPolling';
 import { GreenApiService } from './services/greenApi';
@@ -26,6 +29,8 @@ const STORAGE_KEYS = {
   MESSAGES: 'max_messenger_messages',
   LANG: 'max_messenger_lang',
   SETTINGS: 'max_messenger_settings',
+  CONTACTS: 'max_messenger_contacts',
+  LAST_SYNC: 'max_messenger_last_sync',
 };
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -132,6 +137,45 @@ export default function App() {
     return saved || DEFAULT_INITIAL_PHONE;
   });
 
+  // 5.1 Address Book (Contacts) state
+  const [contacts, setContacts] = useState<Contact[]>(() => {
+    try {
+      const saved = safeStorage.getItem(STORAGE_KEYS.CONTACTS);
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // ignore
+    }
+    return [
+      {
+        id: DEFAULT_INITIAL_PHONE,
+        name: 'Служба поддержки MAX',
+        contactName: 'Служба поддержки MAX',
+        source: 'manual',
+        updatedAt: Date.now(),
+      },
+    ];
+  });
+
+  const [lastSyncTime, setLastSyncTime] = useState<number | null>(() => {
+    try {
+      const saved = safeStorage.getItem(STORAGE_KEYS.LAST_SYNC);
+      return saved ? Number(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [isSyncingContacts, setIsSyncingContacts] = useState(false);
+  const [isAddressBookOpen, setIsAddressBookOpen] = useState(false);
+  const [isIntegrationModalOpen, setIsIntegrationModalOpen] = useState(false);
+
+  // Fast map lookup
+  const contactsMap = useMemo(() => {
+    const map = new Map<string, Contact>();
+    contacts.forEach((c) => map.set(c.id, c));
+    return map;
+  }, [contacts]);
+
   // 6. UI modals & states
   const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
@@ -207,6 +251,16 @@ export default function App() {
   }, [messages]);
 
   useEffect(() => {
+    safeStorage.setItem(STORAGE_KEYS.CONTACTS, JSON.stringify(contacts));
+  }, [contacts]);
+
+  useEffect(() => {
+    if (lastSyncTime) {
+      safeStorage.setItem(STORAGE_KEYS.LAST_SYNC, String(lastSyncTime));
+    }
+  }, [lastSyncTime]);
+
+  useEffect(() => {
     if (activeChatId) {
       safeStorage.setItem(STORAGE_KEYS.ACTIVE_CHAT, activeChatId);
     } else {
@@ -225,6 +279,155 @@ export default function App() {
     }, 3500);
   };
 
+  // Contact book management handlers
+  const handleSaveContact = useCallback((contact: Contact) => {
+    const cleanId = sanitizePhone(contact.id);
+    if (!cleanId) return;
+
+    setContacts((prev) => {
+      const existingIdx = prev.findIndex((c) => c.id === cleanId);
+      if (existingIdx >= 0) {
+        const next = [...prev];
+        next[existingIdx] = {
+          ...next[existingIdx],
+          ...contact,
+          id: cleanId,
+          updatedAt: Date.now(),
+        };
+        return next;
+      }
+      return [
+        {
+          ...contact,
+          id: cleanId,
+          updatedAt: Date.now(),
+        },
+        ...prev,
+      ];
+    });
+
+    // Also update any matching dialog's displayName
+    const resolvedName = contact.contactName || contact.name;
+    if (resolvedName) {
+      setDialogs((prev) =>
+        prev.map((d) =>
+          d.chatId === cleanId ? { ...d, displayName: resolvedName } : d
+        )
+      );
+    }
+
+    showToast(
+      lang === 'ru'
+        ? 'Контакт сохранен в записную книжку'
+        : 'Contact saved to address book'
+    );
+  }, [lang]);
+
+  const handleDeleteContact = useCallback((contactId: string) => {
+    const cleanId = sanitizePhone(contactId);
+    setContacts((prev) => prev.filter((c) => c.id !== cleanId));
+    showToast(
+      lang === 'ru'
+        ? 'Контакт удален из записной книжки'
+        : 'Contact removed from address book'
+    );
+  }, [lang]);
+
+  const handleSyncContacts = useCallback(async (): Promise<number> => {
+    if (!creds) {
+      showToast(
+        lang === 'ru'
+          ? 'Для синхронизации подключите шлюз GREEN-API'
+          : 'Connect GREEN-API gateway to sync contacts'
+      );
+      return 0;
+    }
+
+    setIsSyncingContacts(true);
+    try {
+      const fetchedContacts = await GreenApiService.getContacts(creds);
+
+      if (!fetchedContacts || fetchedContacts.length === 0) {
+        setLastSyncTime(Date.now());
+        showToast(
+          lang === 'ru'
+            ? 'Синхронизация завершена: контактов в шлюзе не обнаружено'
+            : 'Sync complete: no contacts returned from gateway'
+        );
+        return 0;
+      }
+
+      setContacts((prev) => {
+        const map = new Map<string, Contact>();
+        // Keep existing contacts
+        prev.forEach((c) => map.set(c.id, c));
+
+        // Merge incoming contacts from Green-API
+        fetchedContacts.forEach((incoming) => {
+          const cleanId = sanitizePhone(incoming.id);
+          if (!cleanId) return;
+
+          const existing = map.get(cleanId);
+          map.set(cleanId, {
+            ...existing,
+            id: cleanId,
+            name: incoming.name || existing?.name,
+            contactName: incoming.contactName || existing?.contactName || incoming.name,
+            avatarUrl: incoming.avatarUrl || existing?.avatarUrl,
+            source: 'green_api',
+            updatedAt: Date.now(),
+          });
+        });
+
+        return Array.from(map.values());
+      });
+
+      // Update dialogs with contact names
+      setDialogs((prev) =>
+        prev.map((d) => {
+          const match = fetchedContacts.find((c) => sanitizePhone(c.id) === d.chatId);
+          if (match && (match.contactName || match.name)) {
+            return {
+              ...d,
+              displayName: match.contactName || match.name,
+            };
+          }
+          return d;
+        })
+      );
+
+      setLastSyncTime(Date.now());
+      showToast(
+        lang === 'ru'
+          ? `Успешно синхронизировано ${fetchedContacts.length} контактов!`
+          : `Successfully synced ${fetchedContacts.length} contacts!`
+      );
+
+      // PostMessage notification if embedded
+      if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+        window.parent.postMessage(
+          {
+            type: 'MAX_CONTACTS_SYNCED',
+            payload: { count: fetchedContacts.length, timestamp: Date.now() },
+          },
+          '*'
+        );
+      }
+
+      return fetchedContacts.length;
+    } catch (err: any) {
+      console.error('Failed to sync contacts:', err);
+      showToast(
+        lang === 'ru'
+          ? `Ошибка синхронизации: ${err.message || 'Сбой запроса'}`
+          : `Sync error: ${err.message || 'Request failed'}`
+      );
+      return 0;
+    } finally {
+      setIsSyncingContacts(false);
+    }
+  }, [creds, lang]);
+
   // 7. Incoming message processor from long-polling hook
   const handleIncomingMessage = useCallback(
     (newMsg: {
@@ -233,9 +436,14 @@ export default function App() {
       senderPhone: string;
       text: string;
       timestamp: number;
+      senderName?: string;
+      direction?: 'incoming' | 'outgoing';
     }) => {
       const cleanChatId = sanitizePhone(newMsg.chatId);
       if (!cleanChatId) return;
+
+      const direction = newMsg.direction || 'incoming';
+      const isIncoming = direction === 'incoming';
 
       const incomingMsg: ChatMessage = {
         id: newMsg.id,
@@ -243,7 +451,7 @@ export default function App() {
         senderPhone: newMsg.senderPhone || cleanChatId,
         text: newMsg.text,
         timestamp: newMsg.timestamp,
-        direction: 'incoming',
+        direction,
         status: 'sent',
       };
 
@@ -254,6 +462,38 @@ export default function App() {
         }
         return [...prev, incomingMsg];
       });
+
+      // Auto-register sender into Address Book if senderName exists
+      if (newMsg.senderName) {
+        setContacts((prev) => {
+          const existing = prev.find((c) => c.id === cleanChatId);
+          if (!existing) {
+            return [
+              ...prev,
+              {
+                id: cleanChatId,
+                contactName: newMsg.senderName,
+                name: newMsg.senderName,
+                source: 'chat',
+                updatedAt: Date.now(),
+              },
+            ];
+          }
+          if (!existing.contactName && !existing.name) {
+            return prev.map((c) =>
+              c.id === cleanChatId
+                ? {
+                    ...c,
+                    contactName: newMsg.senderName,
+                    name: newMsg.senderName,
+                    updatedAt: Date.now(),
+                  }
+                : c
+            );
+          }
+          return prev;
+        });
+      }
 
       // Update dialogs
       setDialogs((prev) => {
@@ -266,20 +506,22 @@ export default function App() {
           const existing = updated[existingIndex];
           updated[existingIndex] = {
             ...existing,
+            displayName: existing.displayName || newMsg.senderName,
             lastMessageText: newMsg.text,
             lastMessageTimestamp: newMsg.timestamp,
-            lastMessageDirection: 'incoming',
-            unreadCount: isCurrentActive ? 0 : existing.unreadCount + 1,
+            lastMessageDirection: direction,
+            unreadCount: (isCurrentActive || !isIncoming) ? (existing.unreadCount || 0) : existing.unreadCount + 1,
           };
           updatedList = updated;
         } else {
           // New conversation discovered via incoming notification
           const newDialog: ChatDialog = {
             chatId: cleanChatId,
+            displayName: newMsg.senderName,
             lastMessageText: newMsg.text,
             lastMessageTimestamp: newMsg.timestamp,
-            lastMessageDirection: 'incoming',
-            unreadCount: isCurrentActive ? 0 : 1,
+            lastMessageDirection: direction,
+            unreadCount: (isCurrentActive || !isIncoming) ? 0 : 1,
             isPinned: false,
           };
           updatedList = [newDialog, ...prev];
@@ -299,22 +541,42 @@ export default function App() {
         return next;
       });
 
-      // Sound alert if enabled
-      if (settings.soundEnabled) {
+      // Sound alert if enabled and incoming
+      if (isIncoming && settings.soundEnabled) {
         playNotificationSound();
       }
 
+      // Dispatch postMessage for embedded CRM/app integration
+      if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+        window.parent.postMessage(
+          {
+            type: isIncoming ? 'MAX_MESSAGE_RECEIVED' : 'MAX_MESSAGE_SENT',
+            payload: {
+              chatId: cleanChatId,
+              senderPhone: newMsg.senderPhone || cleanChatId,
+              text: newMsg.text,
+              timestamp: newMsg.timestamp,
+              senderName: newMsg.senderName,
+              direction,
+            },
+          },
+          '*'
+        );
+      }
+
       showToast(
-        lang === 'ru'
-          ? `Входящее сообщение от +${cleanChatId}`
-          : `Incoming message from +${cleanChatId}`
+        isIncoming
+          ? (lang === 'ru'
+              ? `Входящее сообщение от ${newMsg.senderName || '+' + cleanChatId}`
+              : `Incoming message from ${newMsg.senderName || '+' + cleanChatId}`)
+          : (lang === 'ru' ? 'Исходящее сообщение синхронизировано' : 'Outgoing message synchronized')
       );
     },
     [activeChatId, lang, settings.soundEnabled]
   );
 
   // 8. Long-polling engine initialization
-  const { status: pollingStatus, lastReceiptId } = useGreenApiPolling({
+  const { status: pollingStatus, lastReceiptId, errorMessage: pollingErrorMessage, retry: retryPolling } = useGreenApiPolling({
     creds,
     enabled: !!creds,
     pollingIntervalMs: settings.pollingIntervalMs,
@@ -400,6 +662,22 @@ export default function App() {
             : m
         )
       );
+
+      // Dispatch postMessage for embedded CRM integrations
+      if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+        window.parent.postMessage(
+          {
+            type: 'MAX_MESSAGE_SENT',
+            payload: {
+              chatId: cleanPhone,
+              text,
+              timestamp,
+              messageId: response.idMessage || tempId,
+            },
+          },
+          '*'
+        );
+      }
     } catch (err: any) {
       console.error('Send message failed:', err);
       // Mark message as failed
@@ -425,15 +703,27 @@ export default function App() {
     );
   };
 
-  const handleStartNewChat = (cleanPhone: string) => {
-    setActiveChatId(cleanPhone);
+  const handleStartNewChat = useCallback((cleanPhone: string, displayName?: string) => {
+    const sanitized = sanitizePhone(cleanPhone);
+    if (!sanitized) return;
+
+    setActiveChatId(sanitized);
+    const existingContact = contactsMap.get(sanitized);
+    const resolvedName = displayName || existingContact?.contactName || existingContact?.name;
+
     setDialogs((prev) => {
-      const exists = prev.find((d) => d.chatId === cleanPhone);
+      const exists = prev.find((d) => d.chatId === sanitized);
       if (exists) {
+        if (resolvedName && !exists.displayName) {
+          return prev.map((d) =>
+            d.chatId === sanitized ? { ...d, displayName: resolvedName } : d
+          );
+        }
         return prev;
       }
       const newDialog: ChatDialog = {
-        chatId: cleanPhone,
+        chatId: sanitized,
+        displayName: resolvedName,
         lastMessageText:
           lang === 'ru' ? 'Новый созданный диалог' : 'New conversation created',
         lastMessageTimestamp: Date.now(),
@@ -443,7 +733,126 @@ export default function App() {
       };
       return sortDialogsWithPinnedFirst([newDialog, ...prev]);
     });
-  };
+  }, [contactsMap, lang]);
+
+  // 11. CRM / Iframe integration bridge (URL query params & window.postMessage API)
+  useEffect(() => {
+    // A. Parse URL search params for deep linking from external systems
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const urlIdInstance = params.get('idInstance');
+      const urlApiToken = params.get('apiTokenInstance');
+      const urlApiUrl = params.get('apiUrl');
+      const urlPhone = params.get('chatId') || params.get('phone');
+      const urlName = params.get('name');
+      const urlText = params.get('text');
+
+      if (urlIdInstance && urlApiToken) {
+        const newCreds: GreenApiCredentials = {
+          idInstance: urlIdInstance.trim(),
+          apiTokenInstance: urlApiToken.trim(),
+          apiUrl: urlApiUrl ? urlApiUrl.trim() : undefined,
+        };
+        setCreds(newCreds);
+        safeStorage.setItem(STORAGE_KEYS.CREDS, JSON.stringify(newCreds));
+      }
+
+      if (urlPhone) {
+        const cleanPhone = sanitizePhone(urlPhone);
+        if (cleanPhone) {
+          handleStartNewChat(cleanPhone, urlName ? urlName.trim() : undefined);
+          if (urlName) {
+            handleSaveContact({
+              id: cleanPhone,
+              contactName: urlName.trim(),
+              source: 'manual',
+              updatedAt: Date.now(),
+            });
+          }
+        }
+      }
+    }
+
+    // B. PostMessage event listener for parent applications (Bitrix24, amoCRM, Custom Portals)
+    const handleMessageEvent = (event: MessageEvent) => {
+      const data = event.data;
+      if (!data || typeof data !== 'object') return;
+
+      switch (data.type) {
+        case 'MAX_OPEN_CHAT': {
+          const { chatId, name } = data.payload || {};
+          if (chatId) {
+            const clean = sanitizePhone(chatId);
+            if (clean) {
+              handleStartNewChat(clean, name);
+              if (name) {
+                handleSaveContact({
+                  id: clean,
+                  contactName: name,
+                  source: 'manual',
+                  updatedAt: Date.now(),
+                });
+              }
+            }
+          }
+          break;
+        }
+
+        case 'MAX_SEND_MESSAGE': {
+          const { chatId, text } = data.payload || {};
+          if (chatId && text) {
+            const clean = sanitizePhone(chatId);
+            if (clean) {
+              handleStartNewChat(clean);
+              handleSendMessage(text);
+            }
+          }
+          break;
+        }
+
+        case 'MAX_SYNC_CONTACTS': {
+          handleSyncContacts();
+          break;
+        }
+
+        case 'MAX_SET_CREDS': {
+          const { idInstance, apiTokenInstance, apiUrl } = data.payload || {};
+          if (idInstance && apiTokenInstance) {
+            const updated: GreenApiCredentials = {
+              idInstance: String(idInstance).trim(),
+              apiTokenInstance: String(apiTokenInstance).trim(),
+              apiUrl: apiUrl ? String(apiUrl).trim() : undefined,
+            };
+            setCreds(updated);
+            safeStorage.setItem(STORAGE_KEYS.CREDS, JSON.stringify(updated));
+            showToast(lang === 'ru' ? 'Ключи шлюза получены из родительской системы' : 'Gateway credentials received from host');
+          }
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessageEvent);
+
+    // Announce readiness to parent container
+    if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+      window.parent.postMessage(
+        {
+          type: 'MAX_READY',
+          payload: {
+            app: 'MAX Web Messenger for GREEN-API',
+            version: '2.0.0',
+            connected: !!creds,
+          },
+        },
+        '*'
+      );
+    }
+
+    return () => {
+      window.removeEventListener('message', handleMessageEvent);
+    };
+  }, [creds, handleSaveContact, handleStartNewChat, handleSyncContacts, lang]);
 
   const handleTogglePinChat = (chatId: string) => {
     setDialogs((prev) => {
@@ -549,12 +958,18 @@ export default function App() {
             onDeleteChat={handleDeleteChat}
             onSignOut={handleSignOut}
             pollingStatus={pollingStatus}
+            pollingErrorMessage={pollingErrorMessage}
+            onRetryPolling={retryPolling}
             lang={lang}
             onToggleLang={toggleLanguage}
             onOpenSettings={() => setIsSettingsModalOpen(true)}
             showPhoneFormatting={settings.showPhoneFormatting}
             onTogglePinChat={handleTogglePinChat}
             typingChats={typingChats}
+            contactsMap={contactsMap}
+            contactsCount={contacts.length}
+            onOpenAddressBook={() => setIsAddressBookOpen(true)}
+            onOpenIntegration={() => setIsIntegrationModalOpen(true)}
           />
         </div>
 
@@ -574,6 +989,17 @@ export default function App() {
             lang={lang}
             settings={settings}
             onOpenSettings={() => setIsSettingsModalOpen(true)}
+            onOpenAddressBook={() => setIsAddressBookOpen(true)}
+            onOpenIntegration={() => setIsIntegrationModalOpen(true)}
+            onQuickSaveContact={(id, name) =>
+              handleSaveContact({
+                id,
+                contactName: name,
+                source: 'manual',
+                updatedAt: Date.now(),
+              })
+            }
+            contact={activeChatId ? contactsMap.get(activeChatId) : undefined}
             isPinned={activeDialog?.isPinned || false}
             onTogglePin={handleTogglePinChat}
             isTyping={!!(activeChatId && typingChats[activeChatId])}
@@ -588,6 +1014,30 @@ export default function App() {
         isOpen={isNewChatModalOpen}
         onClose={() => setIsNewChatModalOpen(false)}
         onStartChat={handleStartNewChat}
+        contacts={contacts}
+        onOpenAddressBook={() => setIsAddressBookOpen(true)}
+        lang={lang}
+      />
+
+      {/* Address Book Modal (Записная книжка) */}
+      <AddressBookModal
+        isOpen={isAddressBookOpen}
+        onClose={() => setIsAddressBookOpen(false)}
+        contacts={contacts}
+        onSelectContact={(phone, name) => handleStartNewChat(phone, name)}
+        onSaveContact={handleSaveContact}
+        onDeleteContact={handleDeleteContact}
+        onSyncContacts={handleSyncContacts}
+        isSyncing={isSyncingContacts}
+        lastSyncTime={lastSyncTime}
+        lang={lang}
+      />
+
+      {/* Integration & Embedding Modal (Iframe/API) */}
+      <IntegrationModal
+        isOpen={isIntegrationModalOpen}
+        onClose={() => setIsIntegrationModalOpen(false)}
+        creds={creds}
         lang={lang}
       />
 

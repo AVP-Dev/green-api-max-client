@@ -85,6 +85,18 @@ export const translations = {
     clearHistory: 'Очистить историю',
     switchLanguage: 'English',
 
+    // Address Book & Integrations
+    addressBookTitle: 'Записная книжка MAX',
+    addressBookSubtitle: 'Контакты, синхронизированные из GREEN-API',
+    syncContactsBtn: 'Синхронизировать',
+    syncingContacts: 'Синхронизация...',
+    addContactBtn: 'Добавить контакт',
+    integrationTitle: 'Интеграция в сервисы',
+    integrationDesc: 'Iframe-виджет, URL-параметры и postMessage SDK',
+    addToContacts: 'В записную книжку',
+    inAddressBook: 'В записной книжке',
+    chooseFromContacts: 'Или выберите из записной книжки:',
+
     // Settings
     settingsTitle: 'Настройки',
     settingsSubtitle: 'Параметры соединения GREEN-API, интерфейса и PWA',
@@ -229,6 +241,18 @@ export const translations = {
     pinned: 'Pinned',
     clearHistory: 'Clear history',
     switchLanguage: 'Русский',
+
+    // Address Book & Integrations
+    addressBookTitle: 'MAX Address Book',
+    addressBookSubtitle: 'Contacts synced from GREEN-API',
+    syncContactsBtn: 'Sync Contacts',
+    syncingContacts: 'Syncing...',
+    addContactBtn: 'Add Contact',
+    integrationTitle: 'Integrate into Services',
+    integrationDesc: 'Iframe widget, URL parameters & postMessage SDK',
+    addToContacts: 'Save to Contacts',
+    inAddressBook: 'In Address Book',
+    chooseFromContacts: 'Or select from address book:',
 
     // Settings
     settingsTitle: 'Settings',

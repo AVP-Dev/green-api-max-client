@@ -6,6 +6,7 @@ export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 export interface AvatarProps {
   id: string;
   name?: string;
+  avatarUrl?: string;
   size?: AvatarSize;
   className?: string;
   showBorder?: boolean;
@@ -23,14 +24,35 @@ const SIZE_MAP: Record<AvatarSize, { dimension: string; text: string }> = {
 export const Avatar: React.FC<AvatarProps> = ({
   id,
   name,
+  avatarUrl,
   size = 'md',
   className = '',
   showBorder = true,
   elementId,
 }) => {
+  const [imgFailed, setImgFailed] = React.useState(false);
   const colorStyle = getAvatarColor(id);
   const initials = getAvatarInitials(name || id);
   const sizeConfig = SIZE_MAP[size] || SIZE_MAP.md;
+
+  if (avatarUrl && !imgFailed) {
+    return (
+      <div
+        id={elementId}
+        className={`rounded-full overflow-hidden shrink-0 select-none ${sizeConfig.dimension} ${
+          showBorder ? 'ring-1 ring-slate-200' : ''
+        } ${className}`}
+      >
+        <img
+          src={avatarUrl}
+          alt={name || id}
+          referrerPolicy="no-referrer"
+          onError={() => setImgFailed(true)}
+          className="w-full h-full object-cover rounded-full"
+        />
+      </div>
+    );
+  }
 
   return (
     <div

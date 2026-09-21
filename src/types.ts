@@ -40,6 +40,7 @@ export interface GreenApiNotification {
     timestamp?: number;
     idMessage?: string;
     chatId?: string;
+    sender?: string;
     presence?: string;
     state?: string;
     status?: string;
@@ -66,6 +67,22 @@ export interface GreenApiNotification {
         description?: string;
         title?: string;
       };
+      fileMessageData?: {
+        downloadUrl?: string;
+        caption?: string;
+        fileName?: string;
+        mimeType?: string;
+      };
+      locationMessageData?: {
+        nameLocation?: string;
+        address?: string;
+        latitude?: number;
+        longitude?: number;
+      };
+      contactMessageData?: {
+        displayName?: string;
+        vcard?: string;
+      };
     };
     statusData?: {
       status: string;
@@ -77,6 +94,28 @@ export interface GreenApiNotification {
 export type PollingStatus = 'idle' | 'active' | 'error' | 'reconnecting' | 'paused';
 
 export type Language = 'ru' | 'en';
+
+export type ContactSource = 'api' | 'manual' | 'chat' | 'green_api';
+
+export interface Contact {
+  id: string; // Clean numeric phone (MAX ID) e.g. "79991234567"
+  name?: string; // Profile name
+  contactName?: string; // Address book friendly name (e.g. "Иван Иванов")
+  avatarUrl?: string;
+  type?: 'user' | 'group';
+  source: ContactSource;
+  note?: string;
+  company?: string;
+  lastSeen?: number | null;
+  updatedAt: number;
+}
+
+export interface GreenApiRawContact {
+  id: string; // e.g. "79991234567@c.us" or "79991234567"
+  name?: string;
+  contactName?: string;
+  type?: 'user' | 'group';
+}
 
 export interface AppSettings {
   pollingIntervalMs: number; // 1000, 2000, 5000

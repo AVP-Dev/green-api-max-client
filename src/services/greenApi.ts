@@ -132,15 +132,17 @@ export class GreenApiService {
 
   /**
    * Receive single notification from GREEN-API queue (HTTP long-polling)
-   * Returns GreenApiNotification object or null when queue is empty
+   * Returns GreenApiNotification object or null when queue is empty.
+   * Handles empty body (0 bytes) and 204 gracefully without SyntaxError.
    */
   static async receiveNotification(
     creds: GreenApiCredentials,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    receiveTimeoutSeconds = 5
   ): Promise<GreenApiNotification | null> {
     const { idInstance, apiTokenInstance } = creds;
     const baseUrl = getBaseUrl(creds);
-    const url = `${baseUrl}/waInstance${idInstance.trim()}/receiveNotification/${apiTokenInstance.trim()}`;
+    const url = `${baseUrl}/waInstance${idInstance.trim()}/receiveNotification/${apiTokenInstance.trim()}?receiveTimeout=${receiveTimeoutSeconds}`;
 
     const response = await fetch(url, {
       method: 'GET',
@@ -152,15 +154,31 @@ export class GreenApiService {
 
     if (!response.ok) {
       if (response.status === 429) {
-        throw new Error('Rate limit exceeded (429)');
+        throw new Error('Лимит запросов к GREEN-API исчерпан (429 Too Many Requests)');
+      }
+      if (response.status === 401) {
+        throw new Error('Ошибка авторизации (401): проверьте idInstance и токен');
       }
       const errText = await response.text().catch(() => '');
-      throw new Error(`Failed to poll notification (${response.status}): ${errText || response.statusText}`);
+      throw new Error(`Ошибка опроса очереди (${response.status}): ${errText || response.statusText}`);
     }
 
-    const data = await response.json();
-    // GREEN-API returns null or empty body when no notification is pending
-    if (!data || !data.receiptId) {
+    // Safely parse body text — GREEN-API returns empty 0-byte string or "null" when queue has no pending items
+    const text = await response.text().catch(() => '');
+    if (!text || !text.trim() || text.trim() === 'null') {
+      return null;
+    }
+
+    let data: any;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      // Body was not JSON (e.g. whitespace or empty)
+      return null;
+    }
+
+    // GREEN-API returns null or object without receiptId when no notification is pending
+    if (!data || typeof data !== 'object' || !data.receiptId) {
       return null;
     }
 
@@ -194,6 +212,321 @@ export class GreenApiService {
       return { result: false };
     }
 
-    return await response.json();
+    const text = await response.text().catch(() => '');
+    if (!text || !text.trim()) {
+      return { result: true };
+    }
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { result: true };
+    }
+  }
+
+  /**
+   * Get settings of GREEN-API instance (incomingWebhook, outgoingWebhook, webhookUrl, etc.)
+   */
+  static async getSettings(
+    creds: GreenApiCredentials,
+    signal?: AbortSignal
+  ): Promise<{
+    wid?: string;
+    incomingWebhook?: string;
+    outgoingMessageWebhook?: string;
+    outgoingAPIMessageWebhook?: string;
+    stateWebhook?: string;
+    incomingWebhookUrl?: string;
+    webhookUrl?: string;
+    webhookUrlToken?: string;
+    deviceInfo?: string;
+    typeAccount?: string;
+  } | null> {
+    const { idInstance, apiTokenInstance } = creds;
+    const baseUrl = getBaseUrl(creds);
+    const url = `${baseUrl}/waInstance${idInstance.trim()}/getSettings/${apiTokenInstance.trim()}`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        signal,
+      });
+
+      if (!response.ok) return null;
+      const text = await response.text().catch(() => '');
+      if (!text || !text.trim()) return null;
+      return JSON.parse(text);
+    } catch (e) {
+      console.warn('Failed to get instance settings:', e);
+      return null;
+    }
+  }
+
+  /**
+   * Set settings of GREEN-API instance (enable webhooks, clear external webhookUrl if needed)
+   */
+  static async setSettings(
+    creds: GreenApiCredentials,
+    settings: {
+      incomingWebhook?: 'yes' | 'no';
+      outgoingMessageWebhook?: 'yes' | 'no';
+      outgoingAPIMessageWebhook?: 'yes' | 'no';
+      stateWebhook?: 'yes' | 'no';
+      incomingWebhookUrl?: string;
+      webhookUrl?: string;
+    },
+    signal?: AbortSignal
+  ): Promise<{ saveSettings?: boolean } | null> {
+    const { idInstance, apiTokenInstance } = creds;
+    const baseUrl = getBaseUrl(creds);
+    const url = `${baseUrl}/waInstance${idInstance.trim()}/setSettings/${apiTokenInstance.trim()}`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+        signal,
+      });
+
+      if (!response.ok) return null;
+      const text = await response.text().catch(() => '');
+      if (!text || !text.trim()) return { saveSettings: true };
+      return JSON.parse(text);
+    } catch (e) {
+      console.warn('Failed to set instance settings:', e);
+      return null;
+    }
+  }
+
+  /**
+   * Get count of notifications currently queued in GREEN-API
+   */
+  static async getWebhooksCount(
+    creds: GreenApiCredentials,
+    signal?: AbortSignal
+  ): Promise<{ countWebhooks: number } | null> {
+    const { idInstance, apiTokenInstance } = creds;
+    const baseUrl = getBaseUrl(creds);
+    const url = `${baseUrl}/waInstance${idInstance.trim()}/getWebhooksCount/${apiTokenInstance.trim()}`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        signal,
+      });
+
+      if (!response.ok) return null;
+      const text = await response.text().catch(() => '');
+      if (!text || !text.trim()) return null;
+      return JSON.parse(text);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Clear notification queue in GREEN-API
+   */
+  static async clearWebhooksQueue(
+    creds: GreenApiCredentials,
+    signal?: AbortSignal
+  ): Promise<boolean> {
+    const { idInstance, apiTokenInstance } = creds;
+    const baseUrl = getBaseUrl(creds);
+    const url = `${baseUrl}/waInstance${idInstance.trim()}/clearWebhooksQueue/${apiTokenInstance.trim()}`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        signal,
+      });
+
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Reboot instance connection
+   */
+  static async rebootInstance(
+    creds: GreenApiCredentials,
+    signal?: AbortSignal
+  ): Promise<{ isReboot?: boolean } | null> {
+    const { idInstance, apiTokenInstance } = creds;
+    const baseUrl = getBaseUrl(creds);
+    const url = `${baseUrl}/waInstance${idInstance.trim()}/reboot/${apiTokenInstance.trim()}`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        signal,
+      });
+
+      if (!response.ok) return null;
+      const text = await response.text().catch(() => '');
+      if (!text || !text.trim()) return { isReboot: true };
+      return JSON.parse(text);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Retrieve address book / contacts list from GREEN-API (getContacts)
+   * Converts all raw chatIds (e.g. 79991234567@c.us) to clean MAX numeric IDs.
+   */
+  static async getContacts(
+    creds: GreenApiCredentials,
+    signal?: AbortSignal
+  ): Promise<import('../types').Contact[]> {
+    const { idInstance, apiTokenInstance } = creds;
+    const baseUrl = getBaseUrl(creds);
+    const url = `${baseUrl}/waInstance${idInstance.trim()}/getContacts/${apiTokenInstance.trim()}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      signal,
+    });
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      throw new Error(`Failed to fetch contacts (${response.status}): ${errText || response.statusText}`);
+    }
+
+    const rawList: import('../types').GreenApiRawContact[] = await response.json();
+    if (!Array.isArray(rawList)) {
+      return [];
+    }
+
+    const now = Date.now();
+    const contactMap = new Map<string, import('../types').Contact>();
+
+    rawList.forEach((item) => {
+      if (!item || !item.id) return;
+      const cleanPhone = sanitizePhone(item.id);
+      if (!cleanPhone) return;
+
+      const existing = contactMap.get(cleanPhone);
+      const contactName = (item.contactName || item.name || '').trim();
+      const name = (item.name || '').trim();
+
+      if (!existing) {
+        contactMap.set(cleanPhone, {
+          id: cleanPhone,
+          name: name || undefined,
+          contactName: contactName || undefined,
+          type: item.type || 'user',
+          source: 'api',
+          updatedAt: now,
+        });
+      } else {
+        // Upgrade with better name if available
+        if (contactName && !existing.contactName) {
+          existing.contactName = contactName;
+        }
+        if (name && !existing.name) {
+          existing.name = name;
+        }
+      }
+    });
+
+    return Array.from(contactMap.values());
+  }
+
+  /**
+   * Get detailed contact info including name, contactName, and avatar (getContactInfo)
+   */
+  static async getContactInfo(
+    creds: GreenApiCredentials,
+    chatId: string,
+    signal?: AbortSignal
+  ): Promise<{
+    avatar?: string;
+    name?: string;
+    contactName?: string;
+    email?: string;
+  } | null> {
+    const { idInstance, apiTokenInstance } = creds;
+    const cleanPhone = sanitizePhone(chatId);
+    if (!cleanPhone) return null;
+
+    const baseUrl = getBaseUrl(creds);
+    const url = `${baseUrl}/waInstance${idInstance.trim()}/getContactInfo/${apiTokenInstance.trim()}`;
+
+    try {
+      // Try with cleanPhone first (MAX format)
+      let response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ chatId: cleanPhone }),
+        signal,
+      });
+
+      // Fallback with @c.us if standard WhatsApp instance requires it
+      if (!response.ok && response.status === 400) {
+        response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ chatId: `${cleanPhone}@c.us` }),
+          signal,
+        });
+      }
+
+      if (!response.ok) {
+        return null;
+      }
+
+      return await response.json();
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Get avatar for a contact (getAvatar)
+   */
+  static async getAvatar(
+    creds: GreenApiCredentials,
+    chatId: string,
+    signal?: AbortSignal
+  ): Promise<{ urlAvatar: string; available: boolean }> {
+    const { idInstance, apiTokenInstance } = creds;
+    const cleanPhone = sanitizePhone(chatId);
+    if (!cleanPhone) return { urlAvatar: '', available: false };
+
+    const baseUrl = getBaseUrl(creds);
+    const url = `${baseUrl}/waInstance${idInstance.trim()}/getAvatar/${apiTokenInstance.trim()}`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ chatId: cleanPhone }),
+        signal,
+      });
+
+      if (!response.ok) {
+        return { urlAvatar: '', available: false };
+      }
+
+      return await response.json();
+    } catch {
+      return { urlAvatar: '', available: false };
+    }
   }
 }

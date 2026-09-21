@@ -13,9 +13,12 @@ import {
   AlertCircle,
   Settings as SettingsIcon,
   Pin,
-  X
+  X,
+  BookUser,
+  Code2,
+  RotateCw
 } from 'lucide-react';
-import { ChatDialog, GreenApiCredentials, Language, PollingStatus } from '../types';
+import { ChatDialog, Contact, GreenApiCredentials, Language, PollingStatus } from '../types';
 import { translations } from '../i18n/translations';
 import { formatDisplayPhone, formatMessageTime } from '../utils/formatters';
 import { Avatar } from './Avatar';
@@ -31,10 +34,16 @@ interface SidebarProps {
   onDeleteChat: (chatId: string) => void;
   onSignOut: () => void;
   pollingStatus: PollingStatus;
+  pollingErrorMessage?: string | null;
+  onRetryPolling?: () => void;
   lang: Language;
   onToggleLang: () => void;
   receiptCount?: number;
   onOpenSettings: () => void;
+  onOpenAddressBook?: () => void;
+  onOpenIntegration?: () => void;
+  contactsCount?: number;
+  contactsMap?: Map<string, Contact>;
   showPhoneFormatting?: boolean;
   onTogglePinChat?: (chatId: string) => void;
   typingChats?: Record<string, boolean>;
@@ -49,9 +58,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onDeleteChat,
   onSignOut,
   pollingStatus,
+  pollingErrorMessage,
+  onRetryPolling,
   lang,
   onToggleLang,
   onOpenSettings,
+  onOpenAddressBook,
+  onOpenIntegration,
+  contactsCount = 0,
+  contactsMap,
   showPhoneFormatting = true,
   onTogglePinChat,
   typingChats = {},
@@ -59,6 +74,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const t = translations[lang];
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  const handleRetry = () => {
+    setIsRetrying(true);
+    onRetryPolling?.();
+    setTimeout(() => setIsRetrying(false), 800);
+  };
 
   const totalUnreadCount = useMemo(() => {
     return dialogs.reduce((acc, d) => acc + (d.unreadCount || 0), 0);
@@ -68,9 +90,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const query = searchQuery.toLowerCase().trim();
     const list = dialogs.filter((d) => {
       if (!query) return true;
+      const contact = contactsMap?.get(d.chatId);
       return (
         d.chatId.includes(query) ||
         (d.displayName && d.displayName.toLowerCase().includes(query)) ||
+        (contact?.contactName && contact.contactName.toLowerCase().includes(query)) ||
+        (contact?.name && contact.name.toLowerCase().includes(query)) ||
         d.lastMessageText.toLowerCase().includes(query)
       );
     });
@@ -85,7 +110,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       // 2. Sort by latest message timestamp descending
       return (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0);
     });
-  }, [dialogs, searchQuery]);
+  }, [dialogs, searchQuery, contactsMap]);
 
   const getStatusBadge = () => {
     switch (pollingStatus) {
@@ -108,10 +133,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
         );
       case 'error':
         return (
-          <span className="flex items-center gap-1.5 text-[11px] text-rose-600 font-medium min-w-0 truncate" title={t.statusError}>
+          <button
+            type="button"
+            onClick={handleRetry}
+            className="flex items-center gap-1.5 text-[11px] text-rose-600 font-medium min-w-0 truncate hover:text-rose-700 transition-colors cursor-pointer"
+            title={`${pollingErrorMessage || t.statusError} (${lang === 'ru' ? 'Нажмите для повтора' : 'Click to retry'})`}
+          >
             <span className="inline-block w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
             <span className="truncate">{t.statusError}</span>
-          </span>
+            <RotateCw className={`w-2.5 h-2.5 ml-0.5 text-rose-500 ${isRetrying ? 'animate-spin' : ''}`} />
+          </button>
         );
       default:
         return (
@@ -142,8 +173,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        {/* Header Action icons: Settings */}
+        {/* Header Action icons: Address Book, Integration, Settings */}
         <div className="flex items-center gap-1 shrink-0">
+          {onOpenAddressBook && (
+            <button
+              id="sidebar-address-book-button"
+              type="button"
+              onClick={onOpenAddressBook}
+              className="relative p-2 text-slate-500 hover:text-[#471AFF] hover:bg-indigo-50 rounded-xl transition-colors cursor-pointer"
+              title={lang === 'ru' ? 'Записная книжка MAX' : 'MAX Address Book'}
+            >
+              <BookUser className="w-4 h-4" />
+              {contactsCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] px-1 rounded-full bg-[#471AFF] text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                  {contactsCount > 99 ? '99+' : contactsCount}
+                </span>
+              )}
+            </button>
+          )}
+
+          {onOpenIntegration && (
+            <button
+              id="sidebar-integration-button"
+              type="button"
+              onClick={onOpenIntegration}
+              className="p-2 text-slate-500 hover:text-[#471AFF] hover:bg-indigo-50 rounded-xl transition-colors cursor-pointer"
+              title={lang === 'ru' ? 'Интеграция в сервисы (iframe, API)' : 'Service Integration (iframe, API)'}
+            >
+              <Code2 className="w-4 h-4" />
+            </button>
+          )}
+
           <button
             id="sidebar-settings-button"
             type="button"
@@ -194,6 +254,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
 
+      {/* Network Error Alert Banner with instant Retry and Settings button */}
+      {pollingStatus === 'error' && (
+        <div className="mx-3 my-2 p-2.5 rounded-xl bg-rose-50 border border-rose-200/80 flex flex-col gap-1.5 text-[11px] text-rose-900 animate-in fade-in duration-200">
+          <div className="flex items-start gap-1.5 min-w-0">
+            <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <span className="font-semibold">{t.statusError}: </span>
+              <span className="text-rose-700 break-words [overflow-wrap:anywhere]">
+                {pollingErrorMessage || (lang === 'ru' ? 'Сбой соединения со шлюзом' : 'Gateway connection failure')}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-1.5 pt-0.5">
+            <button
+              type="button"
+              onClick={handleRetry}
+              disabled={isRetrying}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-rose-200 text-rose-700 font-medium hover:bg-rose-100/70 transition-colors cursor-pointer shadow-2xs text-[11px]"
+            >
+              <RotateCw className={`w-3 h-3 ${isRetrying ? 'animate-spin' : ''}`} />
+              <span>{lang === 'ru' ? 'Повторить попытку' : 'Retry now'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              className="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-medium hover:bg-rose-700 transition-colors cursor-pointer text-[11px]"
+            >
+              {lang === 'ru' ? 'Диагностика' : 'Diagnostics'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Dialogs List */}
       <div className="flex-1 overflow-y-auto divide-y divide-slate-100/80">
         {sortedAndFilteredDialogs.length === 0 ? (
@@ -237,6 +330,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ? formatDisplayPhone(dialog.chatId) 
               : dialog.chatId;
 
+            const contact = contactsMap?.get(dialog.chatId);
+            const resolvedName = dialog.displayName || contact?.contactName || contact?.name || displayPhone;
+            const hasCustomName = Boolean(dialog.displayName || contact?.contactName || contact?.name);
+
             return (
               <div
                 key={dialog.chatId}
@@ -253,7 +350,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <Avatar
                   elementId={`chat-avatar-${dialog.chatId}`}
                   id={dialog.chatId}
-                  name={dialog.displayName}
+                  name={resolvedName}
+                  avatarUrl={contact?.avatarUrl}
                   size="lg"
                   className="shadow-2xs"
                 />
@@ -265,8 +363,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       className={`text-xs font-semibold truncate ${
                         isActive ? 'text-[#471AFF]' : 'text-slate-900'
                       }`}
+                      title={hasCustomName ? `${resolvedName} (${displayPhone})` : resolvedName}
                     >
-                      {dialog.displayName || displayPhone}
+                      {resolvedName}
                     </span>
                     <div className="flex items-center gap-1 shrink-0">
                       {dialog.isPinned && (
