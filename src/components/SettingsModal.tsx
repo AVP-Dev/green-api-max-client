@@ -857,7 +857,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       <div className="flex items-center gap-1.5">
                         <Bell className="w-4 h-4 text-[#471AFF] dark:text-indigo-300" />
                         <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100">
-                          {isRu ? 'Каналы уведомлений — без задвоения' : 'Notification channels — no duplication'}
+                          {isRu ? 'Каналы уведомлений' : 'Notification channels'}
                         </h4>
                       </div>
 
@@ -884,8 +884,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                       {isRu
-                        ? 'Работает только один канал за раз: красивая карточка внутри вкладки — когда вы смотрите на неё, системное уведомление браузера — когда вкладка свёрнута или свернуто окно. Плюс всегда горят счётчик на иконке вкладки и мигание заголовка.'
-                        : 'Only one channel fires at a time: a beautiful in-app card while you are looking at the tab, a system browser notification while the tab is minimized or in the background. The tab icon badge and flashing title always stay on.'}
+                        ? 'По умолчанию — один канал за раз: красивая карточка внутри вкладки — когда вы смотрите на неё, системное уведомление браузера — когда вкладка свёрнута или свернуто окно. Тумблер дублирования ниже осознанно включает оба сразу. Плюс всегда горят счётчик на иконке вкладки и мигание заголовка.'
+                        : 'By default one channel fires at a time: a beautiful in-app card while you are looking at the tab, a system browser notification while the tab is minimized or in the background. The duplication toggle below deliberately enables both at once. The tab icon badge and flashing title always stay on.'}
                     </p>
                   </div>
 
@@ -928,6 +928,32 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         className="mt-0.5 rounded text-[#471AFF] dark:text-indigo-300 focus:ring-[#471AFF]/30 w-4 h-4 cursor-pointer shrink-0"
                       />
                     </label>
+
+                    <label className="flex items-start justify-between gap-3 p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 cursor-pointer hover:border-indigo-200 transition-colors">
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-100 block">
+                          {isRu ? 'Дублировать системным, даже когда вкладка открыта' : 'Also notify at OS level when the tab is open'}
+                        </span>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                          {isRu
+                            ? 'Рядом с карточкой в углу экрана прилетит баннер ОС. Удобно, если мессенджер открыт, а вы смотрите в другое окно.'
+                            : 'A desktop banner lands next to the in-app card. Handy when the messenger is open but you are looking at another window.'}
+                        </span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={settings.duplicateNativeWhenFocused === true}
+                        onChange={(e) => onUpdateSettings({ ...settings, duplicateNativeWhenFocused: e.target.checked })}
+                        className="mt-0.5 rounded text-[#471AFF] dark:text-indigo-300 focus:ring-[#471AFF]/30 w-4 h-4 cursor-pointer shrink-0"
+                      />
+                    </label>
+                  </div>
+
+                  {/* macOS hint: баннер в углу экрана зависит и от настроек ОС */}
+                  <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] text-slate-600 dark:text-slate-300">
+                    {isRu
+                      ? 'macOS: если баннера нет в углу экрана — откройте Системные настройки → Уведомления → ваш браузер → «Разрешить уведомления», и выключите «Не беспокоить» / Фокусирование.'
+                      : 'macOS: no banner in the screen corner? Open System Settings → Notifications → your browser → allow notifications, and turn off Do Not Disturb / Focus.'}
                   </div>
 
                   {/* Permission request action if default */}
@@ -975,8 +1001,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <div className="pt-2 border-t border-indigo-100 dark:border-indigo-800 space-y-2.5">
                     <div className="text-[11px] text-slate-600 dark:text-slate-300">
                       {isRu
-                        ? 'Проверка: первая кнопка показывает то, что придёт прямо сейчас (карточка, т.к. вкладка открыта), вторая — принудительно системное уведомление.'
-                        : 'Verification: the first button shows what would arrive right now (the card, since the tab is open); the second forces a system notification.'}
+                        ? 'Проверка: первая кнопка показывает то, что придёт прямо сейчас (карточка, т.к. вкладка открыта; при включённом дублировании — плюс системный баннер), вторая — принудительно системное уведомление.'
+                        : 'Verification: the first button shows what would arrive right now (the card, since the tab is open; plus a system banner when duplication is on); the second forces a system notification.'}
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">

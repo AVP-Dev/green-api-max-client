@@ -16,6 +16,11 @@ export type BrowserPermissionState = 'default' | 'granted' | 'denied' | 'unsuppo
 export interface NotificationChannelPrefs {
   browserNotificationsEnabled: boolean;
   inAppPopupsEnabled: boolean;
+  /**
+   * Осознанное дублирование системным каналом поверх одноканального
+   * роутинга: баннер ОС рядом с карточкой, даже когда вкладка открыта.
+   */
+  duplicateNativeWhenFocused?: boolean;
 }
 
 export type NotificationChannel = 'popup' | 'native' | 'none';
@@ -75,6 +80,22 @@ export function resolveNotificationChannel(
   if (prefs.browserNotificationsEnabled) return 'native';
   if (prefs.inAppPopupsEnabled) return 'popup';
   return 'none';
+}
+
+/**
+ * Нужно ли ВДОБАВОК к карточке показать системное уведомление ОС,
+ * хотя вкладка в фокусе. В фоне дублирование не требуется — там
+ * системный канал и так первичный (см. resolveNotificationChannel).
+ */
+export function shouldDuplicateNative(
+  tabFocused: boolean,
+  prefs: NotificationChannelPrefs,
+): boolean {
+  return (
+    tabFocused &&
+    prefs.browserNotificationsEnabled &&
+    prefs.duplicateNativeWhenFocused === true
+  );
 }
 
 export interface NativeNotificationOptions {

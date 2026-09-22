@@ -198,6 +198,12 @@ export interface AppSettings {
   browserNotificationsEnabled: boolean;
   /** Beautiful in-app popup card (fires only when the user looks at this tab). */
   inAppPopupsEnabled: boolean;
+  /**
+   * Осознанное дублирование: показывать системное уведомление ОС рядом
+   * с карточкой, даже когда вкладка открыта. По умолчанию выключено
+   * (действует правило «один канал за раз» без задвоения).
+   */
+  duplicateNativeWhenFocused: boolean;
   /** Интерфейсная тема: light / dark / system. */
   theme: ThemeMode;
   /** Фоновая сверка журнала (lastIncoming/lastOutgoing/getChatHistory). Выкл — только long-poll. */

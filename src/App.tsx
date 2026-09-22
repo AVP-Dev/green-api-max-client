@@ -38,6 +38,7 @@ import {
   attachNativeAutocloseOnVisible,
   closeNativeNotificationsForChat,
   resolveNotificationChannel,
+  shouldDuplicateNative,
   showNativeNotification,
 } from './utils/notifications';
 import { loadCreds, saveCreds, clearCreds, isCredsPersistent } from './utils/credentialStorage';
@@ -71,6 +72,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   showPhoneFormatting: true,
   browserNotificationsEnabled: true,
   inAppPopupsEnabled: true,
+  duplicateNativeWhenFocused: false,
   theme: 'system',
   backgroundSyncEnabled: true,
   autoLockMinutes: 0,
@@ -98,6 +100,7 @@ function sanitizeSettings(raw: unknown): AppSettings {
       ? Number(parsed.messageTtlDays)
       : DEFAULT_SETTINGS.messageTtlDays,
     bffEnabled: parsed.bffEnabled === true,
+    duplicateNativeWhenFocused: parsed.duplicateNativeWhenFocused === true,
   };
 }
 
@@ -831,7 +834,9 @@ export default function App() {
       }
 
       // Single-channel routing через resolveNotificationChannel (см. utils/notifications.ts):
-      // ровно ОДИН визуальный канал за раз, с fallback на второй при выключенном «родном».
+      // по умолчанию ровно ОДИН визуальный канал за раз, с fallback на второй
+      // при выключенном «родном»; тумблер duplicateNativeWhenFocused осознанно
+      // добавляет системный баннер рядом с карточкой при открытой вкладке.
       if (isIncoming) {
         enrichContactInfo(cleanChatId);
 
@@ -861,6 +866,25 @@ export default function App() {
                 timestamp: newMsg.timestamp,
                 avatarUrl: contactObj?.avatarUrl,
               });
+
+              // Осознанное дублирование (тумблер в настройках): баннер ОС
+              // в углу экрана рядом с карточкой, даже когда вкладка открыта.
+              // showNativeNotification сам вернёт null без разрешения.
+              if (
+                shouldDuplicateNative(tabVisible, {
+                  browserNotificationsEnabled: settings.browserNotificationsEnabled !== false,
+                  inAppPopupsEnabled: settings.inAppPopupsEnabled !== false,
+                  duplicateNativeWhenFocused: settings.duplicateNativeWhenFocused === true,
+                })
+              ) {
+                showNativeNotification({
+                  title: resolvedSender || formatDisplayPhone(cleanChatId),
+                  body: newMsg.text,
+                  icon: contactObj?.avatarUrl,
+                  chatId: cleanChatId,
+                  onClick: () => handleSelectChat(cleanChatId),
+                });
+              }
             }
           } else if (channel === 'native') {
             // Мигание заголовка + favicon-бейдж (через счётчики непрочитанных)
@@ -906,6 +930,7 @@ export default function App() {
       settings.soundEnabled,
       settings.browserNotificationsEnabled,
       settings.inAppPopupsEnabled,
+      settings.duplicateNativeWhenFocused,
       contacts,
       enrichContactInfo,
       notifyNewIncoming,
@@ -1741,8 +1766,9 @@ export default function App() {
 
   const activeDialog = dialogs.find((d) => d.chatId === activeChatId);
 
-  // Тест «текущего» канала: вкладка открыта → только in-app карточка (+звук).
-  // Системное тестируется отдельной кнопкой «Проверить системное» (форс, bypass роутинга).
+  // Тест «текущего» канала: вкладка открыта → in-app карточка (+звук),
+  // при включённом дублировании — рядом и системное уведомление ОС.
+  // Чисто системное тестируется отдельной кнопкой «Проверить системное» (форс, bypass роутинга).
   const handleTestNotification = () => {
     if (settings.soundEnabled) {
       playNotificationSound();
@@ -1757,16 +1783,31 @@ export default function App() {
       return;
     }
 
+    const withDuplicate = settings.duplicateNativeWhenFocused === true;
     setPopupNotification({
       id: `test_${Date.now()}`,
       chatId: '79991234567',
       senderName: lang === 'ru' ? 'MAX Ассистент' : 'MAX Assistant',
-      text:
-        lang === 'ru'
+      text: withDuplicate
+        ? lang === 'ru'
+          ? 'Привет! Карточка работает — рядом прилетело и системное уведомление.'
+          : 'Hello! The card works — a system notification arrived alongside it.'
+        : lang === 'ru'
           ? 'Привет! Всплывающая карточка работает — системное уведомление при этом НЕ приходит.'
           : 'Hello! The in-app card works — no system notification alongside it.',
       timestamp: Date.now(),
     });
+    if (withDuplicate) {
+      showNativeNotification({
+        title: 'MAX Web Messenger',
+        body:
+          lang === 'ru'
+            ? 'Тест дублирования: системный баннер рядом с карточкой'
+            : 'Duplication test: system banner next to the card',
+        icon: '/favicon.svg',
+        chatId: 'test',
+      });
+    }
   };
 
   // Форсированный тест системного (OS-level) канала — bypass роутинга по фокусу.

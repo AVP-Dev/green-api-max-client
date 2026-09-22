@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveNotificationChannel } from './notifications';
+import { resolveNotificationChannel, shouldDuplicateNative } from './notifications';
 
 describe('resolveNotificationChannel', () => {
   it('focused tab -> popup when enabled', () => {
@@ -51,5 +51,53 @@ describe('resolveNotificationChannel', () => {
         inAppPopupsEnabled: false,
       })
     ).toBe('none');
+  });
+});
+
+describe('shouldDuplicateNative', () => {
+  it('focused tab + duplication on -> true', () => {
+    expect(
+      shouldDuplicateNative(true, {
+        browserNotificationsEnabled: true,
+        inAppPopupsEnabled: true,
+        duplicateNativeWhenFocused: true,
+      })
+    ).toBe(true);
+  });
+
+  it('focused tab + duplication off -> false (single channel preserved)', () => {
+    expect(
+      shouldDuplicateNative(true, {
+        browserNotificationsEnabled: true,
+        inAppPopupsEnabled: true,
+      })
+    ).toBe(false);
+    expect(
+      shouldDuplicateNative(true, {
+        browserNotificationsEnabled: true,
+        inAppPopupsEnabled: true,
+        duplicateNativeWhenFocused: false,
+      })
+    ).toBe(false);
+  });
+
+  it('background tab -> false (native is already primary, no duplication needed)', () => {
+    expect(
+      shouldDuplicateNative(false, {
+        browserNotificationsEnabled: true,
+        inAppPopupsEnabled: true,
+        duplicateNativeWhenFocused: true,
+      })
+    ).toBe(false);
+  });
+
+  it('system channel off -> false even with duplication on', () => {
+    expect(
+      shouldDuplicateNative(true, {
+        browserNotificationsEnabled: false,
+        inAppPopupsEnabled: true,
+        duplicateNativeWhenFocused: true,
+      })
+    ).toBe(false);
   });
 });
