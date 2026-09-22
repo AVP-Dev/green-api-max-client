@@ -285,11 +285,22 @@ export class GreenApiService {
     // GREEN-API returns null or object without receiptId when no notification is pending.
     // Zod-валидация: повреждённые тела без числового receiptId — в null (очередь пуста),
     // с receiptId — возвращаем как есть, хук обработает известное и сделает ack.
-    if (!parseNotification(data)) {
-      return null;
+    // Важно: повреждённое тело с receiptId НЕЛЬЗЯ превращать в null — иначе receiptId
+    // потеряется, ack не произойдёт и FIFO-очередь встанет (дедлок).
+    if (parseNotification(data)) {
+      return data as GreenApiNotification;
     }
-
-    return data as GreenApiNotification;
+    if (
+      data !== null &&
+      typeof data === 'object' &&
+      typeof (data as { receiptId?: unknown }).receiptId === 'number'
+    ) {
+      return {
+        receiptId: (data as { receiptId: number }).receiptId,
+        body: {},
+      } as GreenApiNotification;
+    }
+    return null;
   }
 
   /**
