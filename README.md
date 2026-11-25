@@ -251,13 +251,12 @@ The repository is configured with a strict GitHub Actions workflow located at `.
 
 ---
 
-## Author
-
-Built and maintained by **[Aliaksei Patskevich (AVPDev)](https://avpdev.com)** —
-[LinkedIn](https://linkedin.com/in/avp-dev) • [Telegram](https://t.me/AVP_Dev) • [Blog](https://avpdev.com/en/blog/)
-
----
-
 ## License
 
 This project is released under the MIT License. See [LICENSE](./LICENSE).
+
+---
+
+<div align="center">
+<sub>AVPdev · Software Development &amp; Automation · <a href="https://avpdev.com/">avpdev.com</a></sub>
+</div>
