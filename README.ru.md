@@ -257,13 +257,12 @@ docker run -d -p 3000:80 --name max-web-messenger max-web-messenger
 
 ---
 
-## Автор
-
-Разработка и поддержка — **[Aliaksei Patskevich (AVPDev)](https://avpdev.com)** —
-[LinkedIn](https://linkedin.com/in/avp-dev) • [Telegram](https://t.me/AVP_Dev) • [Блог](https://avpdev.com/en/blog/)
-
----
-
 ## Лицензия
 
 MIT License. См. [LICENSE](./LICENSE).
+
+---
+
+<div align="center">
+<sub>AVPdev · Software Development &amp; Automation · <a href="https://avpdev.com/">avpdev.com</a></sub>
+</div>
